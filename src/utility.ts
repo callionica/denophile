@@ -43,7 +43,7 @@ type Prepend<E, T extends unknown[]> =
 
 /** Reverses the types in a tuple type */
 type Reverse<T extends unknown[], Result extends unknown[] = []> = {
-    0: Reverse<Tail<T>, Prepend<Head<T>, Result>>
+    0: Reverse<Tail<T>, Prepend<Head<T>, Result>>,
     1: Result
 }[Length<T> extends Zero ? 1 : 0];
 
@@ -123,7 +123,7 @@ export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIte
  * @param iterable An iterable to be length-limited
  * @param length The maximum number of items that can be obtained from the new iterable
  */
-export async function* limit<T>(iterable: AnyIterable<T>, length: number) : AsyncIterable<T> {
+export async function* limit<T>(iterable: AnyIterable<T>, length: number): AsyncIterable<T> {
     let yielded = 0;
     for await (let value of iterable) {
         yield value;
