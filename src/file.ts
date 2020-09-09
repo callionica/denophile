@@ -1,4 +1,7 @@
-// A minimal API for accessing the file system built on top of Deno's built-in, low-level file API
+// Requires: [Deno]
+// Supports: [Typescript]
+
+// Callionica's minimal API for accessing the file system built on top of Deno's built-in, low-level file API
 // Scroll past the code for more detailed documentation.
 
 /** A file in the file system */
