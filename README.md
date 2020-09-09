@@ -18,3 +18,18 @@ Because the function allows both synchronous and asynchronous iterables as input
 `zip` is comparable to Python's `zip_longest` with a `fillvalue` of `undefined`.
 
 utility.ts requires Typescript 4.0 or later.
+
+## Type Transforms in utility.ts
+utility.ts contains some type transforms that you might find educational.
+
+A type transform is a generic type that takes a tuple type as input and produces a different tuple type as output. It is the equivalent of calling `map` on an array. Here's the one used for the return type of the `zip` function. 
+
+```
+type Zip<T extends unknown[], Result extends unknown[] = []> = {
+    0: Zip<Tail<T>, Prepend<(InferIteratorValue<Head<T>> | undefined), Result>>,
+    1: Reverse<Result>
+}[Length<T> extends Zero ? 1 : 0];
+```
+
+T is a tuple of iterable types and the result is a typle of the value types of those iterables.
+(Each value types is actually combined with `| undefined` to make it optional).
