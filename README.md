@@ -22,7 +22,7 @@ utility.ts requires Typescript 4.0 or later.
 ## Type Transforms in utility.ts
 utility.ts contains some type transforms that you might find educational.
 
-A type transform is a generic type that takes a tuple type as input and produces a different tuple type as output. It is the equivalent of calling `map` on an array. Here's the one used for the return type of the `zip` function. 
+A type transform is a generic type that takes a tuple type as input and produces a different tuple type as output. It is the equivalent of calling `map` on an array, only all of these type transformations happen at compile time. Here's the one used for the return type of the `zip` function. 
 
 ```
 type Zip<T extends unknown[], Result extends unknown[] = []> = {
@@ -31,5 +31,5 @@ type Zip<T extends unknown[], Result extends unknown[] = []> = {
 }[Length<T> extends Zero ? 1 : 0];
 ```
 
-T is a tuple of iterable types and the result is a typle of the value types of those iterables.
-(Each value types is actually combined with `| undefined` to make it optional).
+T is a tuple of iterable types and the result is a tuple of the value types of those iterables.
+(Each value type is actually combined with `| undefined` to make it optional).
