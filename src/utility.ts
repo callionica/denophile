@@ -11,8 +11,8 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
     return ((value as any)[Symbol.asyncIterator] != undefined);
 }
 
-/** Converts an iterator or iterable into its value type */
-export type InferIteratorValue<T> =
+/** Converts an iterable or iterator into its value type */
+export type ValueOfIterable<T> =
     T extends Iterable<infer V0> ? V0 :
     T extends Iterator<infer V1> ? V1 :
     T extends AsyncIterable<infer V2> ? V2 :
@@ -42,26 +42,33 @@ type Prepend<E, T extends unknown[]> =
     T;
 
 /** Reverses the types in a tuple type */
-type Reverse<T extends unknown[], Result extends unknown[] = []> = {
-    'Continue': Reverse<Tail<T>, Prepend<Head<T>, Result>>,
+type Reverse<Input extends unknown[], Result extends unknown[] = []> = {
+    'Continue': Reverse<Tail<Input>, Prepend<Head<Input>, Result>>,
     'Return': Result
-}[Length<T> extends Zero ? 'Return' : 'Continue'];
+}[Length<Input> extends Zero ? 'Return' : 'Continue'];
 
 /**
- * `ZipResult` takes in a list of iterator/iterable types
- * and returns a list of value types made optional
+ * Takes in a list of iterable types
+ * and returns a list of value types.
+ */ 
+type ValuesOfIterables<Input extends unknown[], Result extends unknown[] = []> = {
+    'Continue': ValuesOfIterables<Tail<Input>, Prepend<(ValueOfIterable<Head<Input>>), Result>>,
+    'Return': Reverse<Result>
+}[Length<Input> extends Zero ? 'Return' : 'Continue'];
+
+/**
+ * Takes in a list of iterable types
+ * and returns a list of value types made optional.
  * 
  * This type is used by the `zip` function.
  * 
- * The types are `X | undefined` because `zip` does not stop at
- * the shortest sequence.
+ * The types are `T | undefined` because `zip` continues returning values
+ * until the longest sequence is consumed, so uses `undefined` to represent
+ * missing values in the shorter sequences.
  * 
  * `zip` is equivalent to Python's `zip_longest` with a `fillvalue` of `undefined`.
  */
-type ZipResult<T extends unknown[], Result extends unknown[] = []> = {
-    'Continue': ZipResult<Tail<T>, Prepend<(InferIteratorValue<Head<T>> | undefined), Result>>,
-    'Return': Reverse<Result>
-}[Length<T> extends Zero ? 'Return' : 'Continue'];
+type ZipResult<Input extends unknown[]> = Partial<ValuesOfIterables<Input>>;
 
 /** Returns the result of calling `Symbol.asyncIterator` or `Symbol.iterator` method */
 function getIterator<T>(iterable: AnyIterable<T>) {
@@ -113,7 +120,7 @@ async function* _zip<T extends AnyIterable<unknown>[]>(...iterables: T) {
  */
 export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIterable<ZipResult<T>> {
     // This wrapper is to work around what looks like a TS compiler bug
-    return (_zip(...iterables) as unknown) as AsyncIterable<ZipResult<T>>;
+    return (_zip(...iterables) as unknown) as AsyncIterable<ValuesOfIterables<T>>;
 }
 
 /**
