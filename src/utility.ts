@@ -43,12 +43,12 @@ type Prepend<E, T extends unknown[]> =
 
 /** Reverses the types in a tuple type */
 type Reverse<T extends unknown[], Result extends unknown[] = []> = {
-    0: Reverse<Tail<T>, Prepend<Head<T>, Result>>,
-    1: Result
-}[Length<T> extends Zero ? 1 : 0];
+    'Continue': Reverse<Tail<T>, Prepend<Head<T>, Result>>,
+    'Return': Result
+}[Length<T> extends Zero ? 'Return' : 'Continue'];
 
 /**
- * `Zip` takes in a list of iterator/iterable types
+ * `ZipResult` takes in a list of iterator/iterable types
  * and returns a list of value types made optional
  * 
  * This type is used by the `zip` function.
@@ -58,10 +58,10 @@ type Reverse<T extends unknown[], Result extends unknown[] = []> = {
  * 
  * `zip` is equivalent to Python's `zip_longest` with a `fillvalue` of `undefined`.
  */
-type Zip<T extends unknown[], Result extends unknown[] = []> = {
-    0: Zip<Tail<T>, Prepend<(InferIteratorValue<Head<T>> | undefined), Result>>,
-    1: Reverse<Result>
-}[Length<T> extends Zero ? 1 : 0];
+type ZipResult<T extends unknown[], Result extends unknown[] = []> = {
+    'Continue': ZipResult<Tail<T>, Prepend<(InferIteratorValue<Head<T>> | undefined), Result>>,
+    'Return': Reverse<Result>
+}[Length<T> extends Zero ? 'Return' : 'Continue'];
 
 /** Returns the result of calling `Symbol.asyncIterator` or `Symbol.iterator` method */
 function getIterator<T>(iterable: AnyIterable<T>) {
@@ -111,9 +111,9 @@ async function* _zip<T extends AnyIterable<unknown>[]>(...iterables: T) {
  * 
  * @param iterables AsyncIterable or Iterable objects whose values you wish to zip
  */
-export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIterable<Zip<T>> {
+export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIterable<ZipResult<T>> {
     // This wrapper is to work around what looks like a TS compiler bug
-    return (_zip(...iterables) as unknown) as AsyncIterable<Zip<T>>;
+    return (_zip(...iterables) as unknown) as AsyncIterable<ZipResult<T>>;
 }
 
 /**
@@ -137,6 +137,7 @@ export async function* limit<T>(iterable: AnyIterable<T>, length: number): Async
 /**
  * Expands an asynchronous iterable to produce an array of its values
  * (similar to `[...iterable]` for synchronous iterables).
+ * Also works with synchronous iterables.
 */
 export async function expand<T>(iterable: AnyIterable<T>) {
     const result: T[] = [];
