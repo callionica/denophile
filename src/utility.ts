@@ -124,29 +124,35 @@ export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIte
 }
 
 /**
- * Returns a new async iterable that pulls from the provided iterable
- * up to a maximum number of items.
+ * Returns a new async iterable that pulls a segment from the provided iterable.
  * 
- * @param iterable An iterable to be length-limited
- * @param length The maximum number of items that can be obtained from the new iterable
+ * @param iterable Any kind of iterable.
+ * @param start The beginning of the specified segment.
+ * @param end The end of the specified segment. This is exclusive of the element at the index 'end'.
  */
-export async function* limit<T>(iterable: AnyIterable<T>, length: number): AsyncIterable<T> {
-    let yielded = 0;
+export async function* slice<T>(iterable: AnyIterable<T>, start?: number, end?: number): AsyncIterable<T> {
+    const theStart = start || 0;
+    const theEnd = end || Infinity;
+    let index = 0;
     for await (let value of iterable) {
-        yield value;
-        ++yielded;
-        if (yielded >= length) {
+        if (index >= theEnd) {
             return;
         }
+
+        if (index >= theStart) {
+            yield value;
+        }
+
+        ++index;
     }
 }
 
 /**
  * Expands an asynchronous iterable to produce an array of its values
- * (similar to `[...iterable]` for synchronous iterables).
+ * (similar to `[...iterable]` or `Array.from(iterable)` for synchronous iterables).
  * Also works with synchronous iterables.
 */
-export async function expand<T>(iterable: AnyIterable<T>) {
+export async function arrayFrom<T>(iterable: AnyIterable<T>) {
     const result: T[] = [];
     for await (let value of iterable) {
         result.push(value);
