@@ -57,18 +57,25 @@ type ValuesOfIterables<Input extends unknown[], Result extends unknown[] = []> =
 }[Length<Input> extends Zero ? 'Return' : 'Continue'];
 
 /**
+ * Any property of type T can be its original type or type V
+ */
+type Mix<T, V> = {
+    [P in keyof T]: T[P] | V;
+};
+
+/**
  * Takes in a list of iterable types
- * and returns a list of value types made optional.
+ * and returns a list of value types (or the fill value type).
  * 
  * This type is used by the `zip` function.
  * 
- * The types are `T | undefined` because `zip` continues returning values
- * until the longest sequence is consumed, so uses `undefined` to represent
- * missing values in the shorter sequences.
+ * The types from the iterables are mixed with the fill value type because `zip`
+ * continues returning values until the longest sequence is consumed, so there is potentially
+ * another type to represent missing values in the shorter sequences.
  * 
- * `zip` is equivalent to Python's `zip_longest` with a `fillvalue` of `undefined`.
+ * `zip` is equivalent to Python's `zip_longest`.
  */
-type ZipResult<Input extends unknown[]> = Partial<ValuesOfIterables<Input>>;
+type ZipResult<Input extends unknown[], Value = undefined> = Mix<ValuesOfIterables<Input>, Value>;
 
 /** Returns the result of calling `Symbol.asyncIterator` or `Symbol.iterator` method */
 function getIterator<T>(iterable: AnyIterable<T>) {
@@ -76,7 +83,7 @@ function getIterator<T>(iterable: AnyIterable<T>) {
 }
 
 /** Implementation of the `zip` function accounting for TS compiler limitations */
-async function* _zip<T extends AnyIterable<unknown>[]>(...iterables: T) {
+async function* _zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables) {
     let iterators = iterables.map(getIterator);
     let its = (await Promise.all(iterators)).map(it => ({ done: false, iterator: it }));
     let remaining = its.length;
@@ -84,14 +91,16 @@ async function* _zip<T extends AnyIterable<unknown>[]>(...iterables: T) {
         let result = [];
         for (let it of its) {
             if (it.done) {
-                result.push(undefined);
+                result.push(fillValue);
             } else {
                 let current = await it.iterator.next();
                 if (current.done) {
                     it.done = true;
                     --remaining;
+                    result.push(fillValue);
+                } else {
+                    result.push(current.value);
                 }
-                result.push(current.value);
             }
         }
         if (remaining) {
@@ -114,13 +123,13 @@ async function* _zip<T extends AnyIterable<unknown>[]>(...iterables: T) {
  * the result is an asynchronous iterable, which you can iterate over using
  * `for await ( ... of ... )`.
  * 
- * `zip` is comparable to Python's `zip_longest` with a `fillvalue` of `undefined`.
+ * `zip` is comparable to Python's `zip_longest`.
  * 
  * @param iterables AsyncIterable or Iterable objects whose values you wish to zip
  */
-export function zip<T extends AnyIterable<unknown>[]>(...iterables: T): AsyncIterable<ZipResult<T>> {
+export function zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables): AsyncIterable<ZipResult<Iterables, Value>> {
     // This wrapper is to work around what looks like a TS compiler bug
-    return (_zip(...iterables) as unknown) as AsyncIterable<ValuesOfIterables<T>>;
+    return (_zip(fillValue, ...iterables) as unknown) as AsyncIterable<ZipResult<Iterables, Value>>;
 }
 
 /**
