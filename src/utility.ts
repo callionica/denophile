@@ -37,7 +37,7 @@ type Tail<T extends unknown[]> =
 
 /** Adds a new type to the head of a tuple type */
 type Prepend<E, T extends unknown[]> =
-    ((head: E, ...args: T) => unknown) extends ((...args: infer V0) => unknown) ?
+    ((_: E, ...args: T) => unknown) extends ((...args: infer V0) => unknown) ?
     V0 :
     T;
 
