@@ -5,12 +5,17 @@
 // Scroll past the code for more detailed documentation.
 
 /** A file in the file system */
-// deno-lint-ignore no-empty-interface
-export interface File { }
+export interface File { _type: 'File'; }
 
 function isFile(value: unknown): value is File {
     // Underneath our opaque file is a Deno.File
     return (value instanceof Deno.File);
+}
+
+type RID = number & { _type: 'RID'; };
+
+function rid(file: File): RID {
+    return (file as unknown as Deno.File).rid as RID;
 }
 
 /** A file system path or a file:// URL */
@@ -32,13 +37,13 @@ function adaptFilePath(filePath: FilePath): FilePath {
 
 /** Opens a file */
 export async function open(filePath: FilePath): Promise<File> {
-    return await Deno.open(adaptFilePath(filePath));
+    return await Deno.open(adaptFilePath(filePath)) as unknown as File;
 }
 
 /** Closes an open file */
 export function close(file: File): void {
     // Hide RID from outside world
-    Deno.close((file as Deno.File).rid);
+    Deno.close(rid(file));
 }
 
 /** Holds a file and a boolean indicating whether to close the file when dispose is called */
@@ -109,8 +114,6 @@ function byteRangeEnd(range: ByteRange): number {
 
     return (range.start || 0) + ByteRangeDefaultLength;
 }
-
-type RID = number;
 
 export type WriteFileOptions = Deno.WriteFileOptions;
 
@@ -193,7 +196,7 @@ async function _readRange(rid: RID, range: ByteRange, buffer?: Uint8Array): Prom
 export async function readRange(fileOrPath: FileOrPath, range: ByteRange, buffer?: Uint8Array): Promise<Uint8Array> {
     const fileHolder = await FileHolder.create(fileOrPath);
     try {
-        return await _readRange((fileHolder.file as Deno.File).rid, range, buffer);
+        return await _readRange(rid(fileHolder.file), range, buffer);
     } finally {
         fileHolder.dispose();
     }
@@ -221,10 +224,10 @@ export async function* readRanges(fileOrPath: FileOrPath, range: ByteRange, buff
         : new Uint8Array(length);
     const fileHolder = await FileHolder.create(fileOrPath);
     try {
-        const rid = (fileHolder.file as Deno.File).rid;
-        const position = await Deno.seek(rid, start, Deno.SeekMode.Start);
+        const id = rid(fileHolder.file);
+        const position = await Deno.seek(id, start, Deno.SeekMode.Start);
         while (true) {
-            const bytesRead = await readFull(rid, workingBuffer);
+            const bytesRead = await readFull(id, workingBuffer);
             const final = (bytesRead < workingBuffer.length);
             if (bytesRead > 0) {
                 // Copy the data to return it to the caller
