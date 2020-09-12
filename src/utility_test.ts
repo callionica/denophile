@@ -35,7 +35,15 @@ Deno.test("slice2", async function () {
 Deno.test("zip", async function () {
     let a = gen([1,2,3,4,5]);
     let b = gen(["1", "2", "3"]);
-    let x = await zip("-", a, b);
+    let x = await zip(a, b, { fillValue: "-" });
+    // let x = await zip(a, b, b);
+    let y = await arrayFrom(x);
+    console.log(y);
+});
+
+Deno.test("zip2", async function () {
+    let x = await zip("abcde", "123456", { fillValue: undefined });
+    // let x = await zip(a, b, b);
     let y = await arrayFrom(x);
     console.log(y);
 });

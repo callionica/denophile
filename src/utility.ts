@@ -125,11 +125,13 @@ async function* _zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue:
  * 
  * `zip` is comparable to Python's `zip_longest`.
  * 
- * @param iterables AsyncIterable or Iterable objects whose values you wish to zip
+ * @param args AsyncIterable or Iterable objects whose values you wish to zip
  */
-export function zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables): AsyncIterable<ZipResult<Iterables, Value>> {
+export function zip<Iterables extends AnyIterable<unknown>[], Value>(...args: [...Iterables, { fillValue: Value }]): AsyncIterable<ZipResult<Iterables, Value>> {
     // This wrapper is to work around what looks like a TS compiler bug
-    return (_zip(fillValue, ...iterables) as unknown) as AsyncIterable<ZipResult<Iterables, Value>>;
+    const options = args[args.length - 1] as { fillValue: Value };
+    const iterables = args.slice(0, args.length - 1) as [...Iterables];
+    return (_zip(options.fillValue, ...iterables) as unknown) as AsyncIterable<ZipResult<Iterables, Value>>;
 }
 
 /**
