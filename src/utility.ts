@@ -145,13 +145,13 @@ export async function* slice<T>(iterable: AnyIterable<T>, start?: number, end?: 
     const theStart = start || 0;
     const theEnd = end || Infinity;
     let index = 0;
-    for await (let value of iterable) {
+    for await (let item of iterable) {
         if (index >= theEnd) {
             return;
         }
 
         if (index >= theStart) {
-            yield value;
+            yield item;
         }
 
         ++index;
@@ -165,8 +165,24 @@ export async function* slice<T>(iterable: AnyIterable<T>, start?: number, end?: 
 */
 export async function arrayFrom<T>(iterable: AnyIterable<T>) {
     const result: T[] = [];
-    for await (let value of iterable) {
-        result.push(value);
+    for await (let item of iterable) {
+        result.push(item);
+    }
+    return result;
+}
+
+/**
+ * Returns a value derived from the first item in the collection that matches a provided test.
+ * 
+ * @param iterable A collection of items
+ * @param testAndMap A function that returns a relevant value when the provided item matches some criteria (and otherwise returns undefined).
+ */
+export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Promise<Result | undefined> {
+    let result: Result | undefined;
+    for await (let item of iterable) {
+        if (undefined !== (result = testAndMap(item))) {
+            break;
+        }
     }
     return result;
 }
