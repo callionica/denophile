@@ -49,8 +49,15 @@ function toFileURL(filePath: FilePath) : URL {
 
 const SEPARATOR = "/";
 
-function isFolder(url: URL): boolean {
-    return url.href.endsWith(SEPARATOR);
+/**
+ * Returns true if the path ends with "/".
+ * Does not access the file system.
+ * */
+export function isFolderPath(filePath: FilePath): boolean {
+    if (filePath instanceof URL) {
+        return filePath.href.endsWith(SEPARATOR);
+    }
+    return filePath.endsWith(SEPARATOR);
 }
 
 /** Opens a file */
@@ -289,10 +296,11 @@ export async function readFile(fileOrPath: FileOrPath, buffer?: Uint8Array): Pro
 
 /** Returns the file system entries contained in the specified folder */
 export async function* directoryEntries(folderPath: FilePath) : AsyncIterable<URL> {
-    const url = toFileURL(folderPath);
-    if (!isFolder(url)) {
-        throw `directoryEntries failure: folderPath did not end with a slash '${url.href}'`;
+    if (!isFolderPath(folderPath)) {
+        throw `directoryEntries failure: folderPath did not end with a slash '${folderPath}'`;
     }
+
+    const url = toFileURL(folderPath);
 
     for await (const child of Deno.readDir(url)) {
         const childURL = new URL(child.name + (child.isDirectory ? SEPARATOR : ""), url);
@@ -338,6 +346,9 @@ export async function* directoryEntries(folderPath: FilePath) : AsyncIterable<UR
 // deal with whatever is there at the time.
 
 // We use opaque files so there's one obvious way to do things.
+
+// We're strict about terminating file paths and URLs that represent folders with a slash
+// so you can test whether a file path represents a folder by looking for a terminal slash.
 
 // FAQ
 
