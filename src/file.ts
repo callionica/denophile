@@ -36,7 +36,7 @@ function adaptFilePath(filePath: FilePath): FilePath {
 }
 
 /** Converts a file path to a file URL */
-function toFileURL(filePath: FilePath) : URL {
+export function toFileURL(filePath: FilePath) : URL {
     if (!(filePath instanceof URL)) {
         if (filePath.startsWith("file://")) {
             return new URL(filePath);
