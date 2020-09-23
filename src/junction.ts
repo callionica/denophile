@@ -51,11 +51,11 @@ type FileURL = URL;
 export interface Entry extends FileName {
     targets: FileURL[];
     isFolder: boolean;
-    children() : Promise<Entry[]>;
+    children(): Promise<Entry[]>;
 }
 
 /** Reads lines from a text file and converts them to URL objects */
-async function loadJunction(filePath: FilePath) : Promise<URL[]> {
+async function loadJunction(filePath: FilePath): Promise<URL[]> {
     const data = await readFile(filePath, new Uint8Array(JUNCTION_MAXIMUM_LENGTH));
     const text = new TextDecoder().decode(data);
     return text.split("\n").map(url => new URL(url));
@@ -70,7 +70,7 @@ async function loadJunction(filePath: FilePath) : Promise<URL[]> {
  * 
  * @param filePath The location of the file
  */
-export async function loadEntry(filePath: FilePath) : Promise<Entry> {
+export async function loadEntry(filePath: FilePath): Promise<Entry> {
     let url = toFileURL(filePath);
 
     let name = fileName(url);
@@ -92,7 +92,7 @@ export async function loadEntry(filePath: FilePath) : Promise<Entry> {
         // For a junction, the targets are read from the file
         targets = await loadJunction(url);
     }
-    
+
     return new Entry_(name, targets);
 }
 
@@ -105,18 +105,18 @@ class Entry_ implements Entry {
     name: string;
     extension?: string;
     targets: FileURL[];
-    
+
     constructor(name: FileName, targets: FileURL[]) {
         this.name = name.name;
         this.extension = name.extension;
         this.targets = targets;
     }
 
-    get isFolder() : boolean {
+    get isFolder(): boolean {
         return this.targets.some(isFolderPath);
     }
 
-    async children() : Promise<Entry[]> {
+    async children(): Promise<Entry[]> {
         // We have to gather all the entries from all the targets
         // so that we can associate them by name which means that
         // this function might have to read many entries from many
