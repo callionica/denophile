@@ -50,6 +50,7 @@ export async function loadEntry(filePath: FilePath) : Promise<Entry> {
     // For an ordinary file, there is one target: the file itself
     let targets = [url];
 
+    // TODO - case sensitivity?
     const isJunction = (name.extension === JUNCTION_EXTENSION);
     if (isJunction) {
         // When we have a junction file, the name of the entry
@@ -92,6 +93,7 @@ class Entry_ implements Entry {
         for (const target of this.targets.filter(isFolderPath)) {
             for await (const child of directoryEntries(target)) {
                 const entry = await loadEntry(child);
+                // TODO - case sensitivity
                 const found = result.find(existingEntry => (existingEntry.name === entry.name) && (existingEntry.extension === entry.extension));
                 if (found) {
                     found.targets.push(...entry.targets);
@@ -103,6 +105,3 @@ class Entry_ implements Entry {
         return result;
     }
 }
-
-
-
