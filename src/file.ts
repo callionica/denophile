@@ -314,6 +314,50 @@ export async function* directoryEntries(folderPath: FilePath) : AsyncIterable<UR
     }
 }
 
+export interface FileName {
+    name: string;
+    extension?: string; // Does not start with a dot
+}
+
+/** A cache of file extensions */
+const extensions: string[] = [];
+
+/** The maximum number of file extensions to cache */
+const extensionsMaximumLength = 1024;
+
+/** Returns the name/extension of a file path */
+export function fileName(filePath: FilePath): FileName {
+
+    // Extensions are shared by many files, so cache and reuse them to reduce memory
+    function cache(extension: string): string {
+        const found = extensions.find(ext => ext === extension);
+        if (found) {
+            return found;
+        }
+
+        if (extensions.length < extensionsMaximumLength) {
+            extensions.push(extension);
+        }
+
+        return extension;
+    }
+
+    const path = (filePath instanceof URL) ? filePath.href : filePath;
+    const last = path.endsWith(SEPARATOR) ? path.length - 2 : path.length - 1;
+    const slashIndex = path.lastIndexOf(SEPARATOR, last);
+    const name = decodeURIComponent(path.substring(slashIndex + 1, last + 1));
+
+    const dotIndex = name.lastIndexOf(".");
+    if (dotIndex >= 0) {
+        return {
+            name: name.substring(0, dotIndex),
+            extension: cache(name.substring(dotIndex + 1))
+        };
+    }
+
+    return { name };
+}
+
 // NOTES
 
 // When you see FileOrPath, you can pass an open File, a file:// URL, or a file path or file:// URL as a string.
