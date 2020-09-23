@@ -96,6 +96,11 @@ export async function loadEntry(filePath: FilePath) : Promise<Entry> {
     return new Entry_(name, targets);
 }
 
+/** Create a junction without writing it to disk */
+export function createEntry(name: FileName, targets: FilePath[]) {
+    return new Entry_(name, targets.map(toFileURL));
+}
+
 class Entry_ implements Entry {
     name: string;
     extension?: string;
