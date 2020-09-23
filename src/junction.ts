@@ -1,5 +1,6 @@
 // junction.ts provides a view of a file system that allows folders to be combined
 // manually using .junction files, and automatically by associating items of the same name
+// at the same level of the tree.
 
 // Junction files are text files where each line is a file:// URL pointing to a file or folder.
 // Junction files use the `.junction` extension.
@@ -10,7 +11,34 @@
 // A junction file containing multiple folder URLs makes the junction file 
 // behave like a folder whose contents are the contents of the specified folders
 
-import { FilePath, FileName, directoryEntries, fileName, isFolderPath, readFile, toFileURL } from "./file.ts";
+// Imagine a file system like this:
+// ROOT/
+//  Images/
+//      Image1.jpg
+//      Extra/
+//          Extra1.dat
+//  Texts/
+//      Text1.txt
+//      Extra/
+//          Extra2.dat
+
+// We can get a view that looks like this:
+// ROOT/
+//  Image1.jpg
+//  Text1.txt
+//  Extra/
+//      Extra1.dat
+//      Extra2.dat
+
+// by creating a junction that lists the Images/ and Texts/ folders.
+
+// We can ask to combine the Images/ and Texts/ folders by creating the junction.
+// Once we do that, the Images/Extra/ and Texts/Extra/ folders are combined automatically.
+
+import {
+    FilePath, FileName,
+    directoryEntries, fileName, isFolderPath, readFile, toFileURL
+} from "./file.ts";
 
 const JUNCTION_EXTENSION = "junction";
 const JUNCTION_MAXIMUM_LENGTH = 32 * 1024; // 32K maximum bytes in a junction file 
