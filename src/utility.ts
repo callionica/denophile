@@ -174,6 +174,8 @@ export async function arrayFrom<T>(iterable: AnyIterable<T>) {
 /**
  * Returns a value derived from the first item in the collection that matches a provided test.
  * 
+ * Like Array.some except doesn't just return a boolean, or like Array.find except doesn't just return exactly the found item.
+ * 
  * @param iterable A collection of items
  * @param testAndMap A function that returns a relevant value when the provided item matches some criteria (and otherwise returns undefined).
  */
