@@ -342,10 +342,14 @@ export function fileName(filePath: FilePath): FileName {
         return extension;
     }
 
+    // Make URLs be URL objects
+    filePath = adaptFilePath(filePath);
+
+    const decode = (filePath instanceof URL) ? decodeURIComponent : (x: string) => x;
     const path = (filePath instanceof URL) ? filePath.href : filePath;
     const last = path.endsWith(SEPARATOR) ? path.length - 2 : path.length - 1;
     const slashIndex = path.lastIndexOf(SEPARATOR, last);
-    const name = decodeURIComponent(path.substring(slashIndex + 1, last + 1));
+    const name = decode(path.substring(slashIndex + 1, last + 1));
 
     const dotIndex = name.lastIndexOf(".");
     if (dotIndex >= 0) {

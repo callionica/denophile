@@ -9,4 +9,11 @@ Deno.test("directoryEntries", async function () {
 Deno.test("name", async function () {
     const result = fileName("/Users/user/Desktop/__current/fs.ext");
     console.log(result);
+    console.log(fileName("what"));
+    console.log(fileName("/what"));
+    console.log(fileName("what a space"));
+    console.log(fileName("/what a space/"));
+    console.log(fileName("/what%20a space/"));
+    console.log(fileName("file:///what a space/"));
+    console.log(fileName("file:///what%20a space/"));
 });
