@@ -1,12 +1,13 @@
 // junction.ts provides a view of a file system that allows folders to be combined
 // manually using .junction files, and automatically by associating items of the same name
 
-// .junction files are text files where each line is a file:// URL pointing to a file or folder
+// Junction files are text files where each line is a file:// URL pointing to a file or folder.
+// Junction files use the `.junction` extension.
 
-// A .junction file containing a single file URL makes the .junction file
+// A junction file containing a single file URL makes the junction file
 // behave like that file, but with a new name or location.
 
-// A .junction file containing multiple folder URLs makes the .junction file 
+// A junction file containing multiple folder URLs makes the junction file 
 // behave like a folder whose contents are the contents of the specified folders
 
 import { FilePath, FileName, directoryEntries, fileName, isFolderPath, readFile, toFileURL } from "./file.ts";
@@ -16,6 +17,9 @@ const JUNCTION_MAXIMUM_LENGTH = 32 * 1024; // 32K maximum bytes in a junction fi
 
 type FileURL = URL;
 
+/**
+ * An entry in the tree of files and folders.
+ */
 export interface Entry extends FileName {
     targets: FileURL[];
     isFolder: boolean;
@@ -29,6 +33,15 @@ async function loadJunction(filePath: FilePath) : Promise<URL[]> {
     return text.split("\n").map(url => new URL(url));
 }
 
+/**
+ * Loads a folder, junction file, or other file as the root entry of a tree
+ * that represents the junction-based view of the file system.
+ * 
+ * Only if filePath represents a junction file will there be an immediate disk access.
+ * Otherwise no disk access will occur until `children` is called.
+ * 
+ * @param filePath The location of the file
+ */
 export async function loadEntry(filePath: FilePath) : Promise<Entry> {
     let url = toFileURL(filePath);
 
