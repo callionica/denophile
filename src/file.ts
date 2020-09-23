@@ -35,6 +35,24 @@ function adaptFilePath(filePath: FilePath): FilePath {
     return filePath;
 }
 
+/** Converts a file path to a file URL */
+function toFileURL(filePath: FilePath) : URL {
+    if (!(filePath instanceof URL)) {
+        if (filePath.startsWith("file://")) {
+            return new URL(filePath);
+        } else {
+            return new URL("file://" + filePath);
+        }
+    }
+    return filePath;
+}
+
+const SEPARATOR = "/";
+
+function isFolder(url: URL): boolean {
+    return url.href.endsWith(SEPARATOR);
+}
+
 /** Opens a file */
 export async function open(filePath: FilePath): Promise<File> {
     return await Deno.open(adaptFilePath(filePath)) as unknown as File;
@@ -267,6 +285,25 @@ export async function readFile(fileOrPath: FileOrPath, buffer?: Uint8Array): Pro
         throw `File is not less than ${length} bytes, so unable to retrieve the whole file.`;
     }
     return result;
+}
+
+/** Returns the file system entries contained in the specified folder */
+export async function* directoryEntries(folderPath: FilePath) : AsyncIterable<URL> {
+    const url = toFileURL(folderPath);
+    if (!isFolder(url)) {
+        throw `directoryEntries failure: folderPath did not end with a slash '${url.href}'`;
+    }
+
+    for await (const child of Deno.readDir(url)) {
+        const childURL = new URL(child.name + (child.isDirectory ? SEPARATOR : ""), url);
+        // TODO Deno.readLink doesn't accept URL
+        // TODO Need to determine if target is a directory to ensure terminal slash on URL
+        // if (child.isSymlink) {
+        //     const target = await Deno.readLink(childURL);
+        //     yield toFileURL(target);
+        // }
+        yield childURL;
+    }
 }
 
 // NOTES
