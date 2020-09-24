@@ -55,10 +55,10 @@ export interface Entry extends FileName {
 }
 
 /** Reads lines from a text file and converts them to URL objects */
-async function loadJunction(filePath: FilePath): Promise<URL[]> {
-    const data = await readFile(filePath, new Uint8Array(JUNCTION_MAXIMUM_LENGTH));
+async function loadJunction(url: URL): Promise<URL[]> {
+    const data = await readFile(url, new Uint8Array(JUNCTION_MAXIMUM_LENGTH));
     const text = new TextDecoder().decode(data);
-    return text.split("\n").map(url => new URL(url));
+    return text.split("\n").map(urlLine => new URL(urlLine, url));
 }
 
 /**
