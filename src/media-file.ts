@@ -15,7 +15,7 @@ function isMedia(entry: Entry) {
     return MEDIA_EXTENSIONS.includes(entry.extension.toLowerCase());
 }
 
-interface Data {
+export interface Data {
     name?: string; // Track name, Episode name
     numberFromName?: string; // Track number, episode number if it came from the name
 
@@ -155,7 +155,7 @@ const standardDataExtractors = (function () {
     ];
 })();
 
-class MediaEntry {
+export class MediaEntry {
     entry: Entry;
     parent?: MediaEntry;
 
