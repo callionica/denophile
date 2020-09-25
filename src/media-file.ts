@@ -7,7 +7,7 @@ import type { Entry } from "./junction.ts";
 
 const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
 
-function isMedia(entry: Entry) {
+function isPrimary(entry: Entry) {
     if (!entry.extension) {
         return false;
     }
@@ -155,17 +155,40 @@ const standardDataExtractors = (function () {
     ];
 })();
 
-export class MediaEntry {
+export class Satellite {
     entry: Entry;
-    parent?: MediaEntry;
+    primary: Primary;
+    tags: string[];
+
+    constructor(entry: Entry, primary: Primary) {
+        this.entry = entry;
+        this.primary = primary;
+
+        const name = hasPrefix(entry, this.primary.name) ? this.primary.name : "folder";
+        const remainder = this.entry.name.substring(name.length);
+        this.tags = remainder.split(".").filter(x => x !== "");
+    }
+}
+
+export class Primary {
+    entry: Entry;
+    parent?: Primary;
 
     data_?: Data;
 
     entryChildren_?: Entry[];
-    children_?: MediaEntry[];
+    children_?: Primary[];
 
     get name(): string {
         return this.entry.name;
+    }
+
+    get extension(): string | undefined {
+        return this.entry.extension;
+    }
+
+    get isFolder(): boolean {
+        return this.entry.isFolder;
     }
 
     refresh() {
@@ -174,7 +197,7 @@ export class MediaEntry {
         this.children_ = undefined;
     }
 
-    constructor(entry: Entry, parent?: MediaEntry) {
+    constructor(entry: Entry, parent?: Primary) {
         this.entry = entry;
         this.parent = parent;
     }
@@ -187,29 +210,28 @@ export class MediaEntry {
         return this.entryChildren_;
     }
 
-    async children(): Promise<MediaEntry[]> {
+    async children(): Promise<Primary[]> {
         if (this.children_ === undefined) {
             const c = await this.entryChildren();
-            this.children_ = c.filter(c => c.isFolder || isMedia(c)).map(c => new MediaEntry(c, this));
+            this.children_ = c.filter(c => c.isFolder || isPrimary(c)).map(c => new Primary(c, this));
         }
         
         return this.children_;
     }
 
-    isSatellite(entry: Entry): boolean {
-        const thisName = this.name;
-        const length = thisName.length;
-        const name = entry.name;
-        return name.startsWith(thisName) && ((name.length === length) || (name[length] === "."));
-    }
-
-    async satellites(): Promise<Entry[]> {
-        let result: Entry[] = [];
+    async satellites(): Promise<Satellite[]> {
+        let result: Satellite[] = [];
 
         if (this.parent != undefined) {
             const parentChildren = await this.parent.entryChildren();
-            const siblingSatellites = parentChildren.filter(e => (!e.isFolder) && (e !== this.entry) && this.isSatellite(e));
-            result = siblingSatellites;
+            const siblingSatellites = parentChildren.filter(e => (!e.isFolder) && (e !== this.entry) && hasPrefix(e, this.name));
+            result = siblingSatellites.map(s => new Satellite(s, this));
+        }
+
+        if (this.isFolder) {
+            const children = await this.entryChildren();
+            const childSatellites = children.filter(e => (!e.isFolder) && (e !== this.entry) && (hasPrefix(e, this.name) || hasPrefix(e, "folder")));
+            result.push(...childSatellites.map(s => new Satellite(s, this)));
         }
 
         return result;
@@ -274,4 +296,10 @@ export class MediaEntry {
 
         return result;
     }
+}
+
+function hasPrefix(entry: Entry, prefix: string) {
+    const length = prefix.length;
+    const name = entry.name;
+    return name.startsWith(prefix) && ((name.length === length) || (name[length] === "."));
 }
