@@ -6,6 +6,7 @@
 import type { Entry } from "./junction.ts";
 
 const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
+const FOLDER_NAME = "folder";
 
 function isPrimary(entry: Entry) {
     if (!entry.extension) {
@@ -164,7 +165,7 @@ export class Satellite {
         this.entry = entry;
         this.primary = primary;
 
-        const name = hasPrefix(entry, this.primary.name) ? this.primary.name : "folder";
+        const name = hasPrefix(entry, this.primary.name) ? this.primary.name : FOLDER_NAME;
         const remainder = this.entry.name.substring(name.length);
         this.tags = remainder.split(".").filter(x => x !== "");
     }
@@ -230,7 +231,7 @@ export class Primary {
 
         if (this.isFolder) {
             const children = await this.entryChildren();
-            const childSatellites = children.filter(e => (!e.isFolder) && (e !== this.entry) && (hasPrefix(e, this.name) || hasPrefix(e, "folder")));
+            const childSatellites = children.filter(e => (!e.isFolder) && (e !== this.entry) && (hasPrefix(e, this.name) || hasPrefix(e, FOLDER_NAME)));
             result.push(...childSatellites.map(s => new Satellite(s, this)));
         }
 
