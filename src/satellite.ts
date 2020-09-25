@@ -1,7 +1,10 @@
-// media-file.ts provides a view over a file system that reveals associations between AV files
-// and other files like subtitles, images, text files, and JSON metadata.
-
-// MediaEntry is a tree of folders or audio/video files
+// satellite.ts provides a view over a file system that reveals associations between files
+// Some files are Primaries and some are Satellites
+// A Satellite's file name starts with the name of a Primary
+// and is a sibling of the Primary (if the Primary is a file or folder)
+// or a child of the Primary (if the Primary is a folder)
+// Files that are prefixed with "folder" are also satellites of their parent folder.
+// A satellite may have tags which are period-separated strings appended to the name of the file.
 
 import type { Entry } from "./junction.ts";
 
