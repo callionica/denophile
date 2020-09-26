@@ -1,3 +1,6 @@
+// Building on top of the satellite file system
+// with some media-specific features
+
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 
