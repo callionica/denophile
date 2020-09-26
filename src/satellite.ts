@@ -60,11 +60,9 @@ export class Primary {
     }
 
     isPrimary(entry: Entry): boolean {
-        if (!entry.extension) {
-            return false;
-        }
-    
-        return ["m4a", "m4v", "mp4", "ts"].includes(entry.extension.toLowerCase());
+        // Anything with a name can be a primary
+        // (It could also be a satellite of some other primary)
+        return entry.name.length > 0;
     }
 
     createChild(c: Entry) : this {
