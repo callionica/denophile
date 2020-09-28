@@ -1,10 +1,18 @@
 // Building on top of the satellite file system
 // with some media-specific features
 
+// The layers are:
+// media.ts -> satellite.ts -> junction.ts -> file.ts
+
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 
-const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
+type IMAGE_USE = "backdrop" | "poster";
+
+export const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
+export const SUBTITLE_EXTENSIONS = ["vtt", "webvtt", "ttml", "srt"];
+export const TEXT_EXTENSIONS = ["txt"];
+export const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
 
 export interface Data {
     name?: string; // Track name, Episode name
@@ -117,13 +125,13 @@ const standardDataExtractors = (function () {
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
             opt(cap("group")(group), separator),
             season, subgroupNumber, episode, number("number"),
-                opt(opt(dash), episode, number("endNumber")), separator,
+            opt(opt(dash), episode, number("endNumber")), separator,
             cap("name")(name)
         ),
         re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
             subgroupNumber, dash, number("number"), opt(alt(separator, ws),
-            cap("name")(name))
+                cap("name")(name))
         ),
         re(
             cap("group")(group), separator,
@@ -158,11 +166,11 @@ export class MediaPrimary extends Primary {
         if (!entry.extension) {
             return false;
         }
-    
+
         return MEDIA_EXTENSIONS.includes(entry.extension.toLowerCase());
     }
 
-    get data(): Data {
+    get unprocessedData(): Data {
         if (this.data_ === undefined) {
             this.data_ = parseData(this.name, standardDataExtractors);
         }
@@ -170,7 +178,7 @@ export class MediaPrimary extends Primary {
     }
 
     get info(): Data {
-        let result = { ...this.data };
+        let result = { ...this.unprocessedData };
 
         function cleanup(text: string) {
             text = text.replace(/[_\s]+/g, " ");
@@ -220,5 +228,95 @@ export class MediaPrimary extends Primary {
         }
 
         return result;
+    }
+
+    /**
+     * The group folder is the grandparent if it matches the name of the group,
+     * or it is the parent if it matches the name of the group. Otherwise there
+     * is no group folder.
+     */
+    get groupFolder(): this | undefined {
+        const group = this.info.group;
+        const parent = this.parent;
+
+        if ((group !== undefined) && (parent !== undefined)) {
+
+            const grandParent = parent.parent;
+            if (grandParent !== undefined) {
+                if (grandParent.name === group) {
+                    return grandParent;
+                }
+            }
+
+            if (parent.name === group) {
+                return parent;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * The subgroup folder is the parent if it matches the name of the subgroup
+     * and that folder hasn't been identified as the group folder. Otherwise there
+     * is no subgroup folder.
+     */
+    get subgroupFolder(): this | undefined {
+        const subgroup = this.info.subgroup;
+        const parent = this.parent;
+
+        if ((subgroup !== undefined) && (parent !== undefined)) {
+            if ((parent.name === subgroup) && (parent !== this.groupFolder)) {
+                return parent;
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Searches for matching satellites starting at the current primary and then
+     * through ancestor primaries if no is match found at a lower level.
+     * 
+     * This is useful for images or text descriptions, where you'd like 
+     * the specific result for the episode of a TV show, but if none is found, you'd accept
+     * a match for the season or the show.
+     * 
+     * Note that subgroup-related satellites can be found in two ways:
+     * 1. As a satellite of the subgroup folder
+     * 2. As a satellite of the group folder tagged with the subgroup name
+     * 
+     * @param extensions Array of extensions to match
+     */
+    async findSatellites(extensions: string[]): Promise<Satellite<this>[]> {
+        // Look for matching satellites of this object.
+        // If none, look on the subgroup folder.
+        for (const primary of [this, this.subgroupFolder]) {
+            if (primary !== undefined) {
+                const satellites = (await primary.satellites()).filter(s => s.extension && extensions.includes(s.extension.toLowerCase()));
+
+                if (satellites.length > 0) {
+                    return satellites;
+                }
+            }
+        }
+
+        // If no satellites, look for subgroup-tagged satellites on the group folder.
+        // If none, return any matching satellites on the group folder.
+        const primary = this.groupFolder;
+        if (primary !== undefined) {
+            const satellites = (await primary.satellites()).filter(s => s.extension && extensions.includes(s.extension.toLowerCase()));
+
+            const subgroup = this.info.subgroup;
+            if (subgroup !== undefined) {
+                const subgroupSatellites = satellites.filter(s => s.tags.includes(subgroup));
+                if (subgroupSatellites.length > 0) {
+                    return subgroupSatellites;
+                }
+            }
+        }
+
+        // Otherwise, return an empty array
+        return [];
     }
 }
