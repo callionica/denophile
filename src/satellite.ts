@@ -5,8 +5,19 @@
 // or a child of the Primary (if the Primary is a folder)
 // Files that are prefixed with "folder" are also satellites of their parent folder.
 // A satellite may have tags which are period-separated strings appended to the name of the file.
+// One of these tags can indicate the primary language of the satellite.
 
 import type { Entry } from "./junction.ts";
+
+function first<Item, Result>(iterable: Iterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Result | undefined {
+    let result: Result | undefined;
+    for (const item of iterable) {
+        if (undefined !== (result = testAndMap(item))) {
+            break;
+        }
+    }
+    return result;
+}
 
 function hasPrefix(entry: Entry, prefix: string) {
     const length = prefix.length;
@@ -38,6 +49,37 @@ export class Satellite<T extends Primary> {
 
     get isFolder(): boolean {
         return this.entry.isFolder;
+    }
+
+    get language(): string {
+
+        function tag2language(tag: string): string | undefined {
+            const languageTag = tag.toLowerCase();
+            const data = [
+                ["en", "en-us", "en-gb", "english"],
+                ["da", "da-dk", "dansk", "dansk1", "dansk2", "kommentar", "non-dansk", "danish"],
+                ["de", "de-de", "deutsch", "german"],
+                ["no", "norsk", "norwegian"],
+                ["sv", "sv-se", "se", "svenska", "swedish"],
+                ["fr", "français", "francais", "french"],
+                ["es", "espagnol", "spanish"],
+            ];
+
+            const language = first(data, languageTags => {
+                if (languageTags.indexOf(languageTag) >= 0) {
+                    return languageTags[0];
+                }
+            });
+
+            return language;
+        }
+
+        function tags2language(tags: string[]): string {
+            const language = first(tags, tag2language);
+            return language || "en";
+        }
+
+        return tags2language(this.tags);
     }
 }
 
