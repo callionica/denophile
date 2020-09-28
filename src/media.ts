@@ -276,7 +276,7 @@ export class MediaPrimary extends Primary {
 
     /**
      * Searches for matching satellites starting at the current primary and then
-     * through ancestor primaries if no is match found at a lower level.
+     * through ancestor primaries if no match is found at a lower level.
      * 
      * This is useful for images or text descriptions, where you'd like 
      * the specific result for the episode of a TV show, but if none is found, you'd accept
@@ -313,6 +313,11 @@ export class MediaPrimary extends Primary {
                 if (subgroupSatellites.length > 0) {
                     return subgroupSatellites;
                 }
+            }
+
+            // No subgroup-tagged satellites, so return group satellites
+            if (satellites.length > 0) {
+                return satellites;
             }
         }
 
