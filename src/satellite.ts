@@ -27,6 +27,18 @@ export class Satellite<T extends Primary> {
         const remainder = this.entry.name.substring(name.length);
         this.tags = remainder.split(".").filter(x => x !== "");
     }
+
+    get name(): string {
+        return this.entry.name;
+    }
+
+    get extension(): string | undefined {
+        return this.entry.extension;
+    }
+
+    get isFolder(): boolean {
+        return this.entry.isFolder;
+    }
 }
 
 const FOLDER_NAME = "folder";
