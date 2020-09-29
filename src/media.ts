@@ -289,11 +289,19 @@ export class MediaPrimary extends Primary {
      * @param extensions Array of extensions to match
      */
     async findSatellites(extensions: string[]): Promise<Satellite<this>[]> {
+        
+        const getSatellites = async (primary: this) => {
+            const match = (s: Satellite<this>) => {
+                return s.extension && extensions.includes(s.extension.toLowerCase());
+            };
+            return (await primary.satellites()).filter(match);
+        };
+
         // Look for matching satellites of this object.
         // If none, look on the subgroup folder.
         for (const primary of [this, this.subgroupFolder]) {
             if (primary !== undefined) {
-                const satellites = (await primary.satellites()).filter(s => s.extension && extensions.includes(s.extension.toLowerCase()));
+                const satellites = await getSatellites(primary);
 
                 if (satellites.length > 0) {
                     return satellites;
@@ -305,7 +313,7 @@ export class MediaPrimary extends Primary {
         // If none, return any matching satellites on the group folder.
         const primary = this.groupFolder;
         if (primary !== undefined) {
-            const satellites = (await primary.satellites()).filter(s => s.extension && extensions.includes(s.extension.toLowerCase()));
+            const satellites = await getSatellites(primary);
 
             const subgroup = this.info.subgroup;
             if (subgroup !== undefined) {
