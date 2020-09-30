@@ -103,6 +103,19 @@ export class Primary {
         return this.entry.isFolder;
     }
 
+    // deno-lint-ignore getter-return
+    get root(): this {
+        // deno-lint-ignore no-this-alias
+        let primary = this;
+        while (true) {
+            if (primary.parent !== undefined) {
+                primary = primary.parent;
+            } else {
+                return primary;
+            }
+        }
+    }
+
     refresh() {
         this.entryChildren_ = undefined;
         this.children_ = undefined;
