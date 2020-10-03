@@ -6,22 +6,49 @@
 /** A type that can be either an asynchronous or a synchronous iterable (such as an array or a generator) */
 export type AnyIterable<T> = AsyncIterable<T> | Iterable<T>;
 
+/** A type that can be either an asynchronous or a synchronous generator */
+export type AnyGenerator<T> = AsyncGenerator<T> | Generator<T>;
+
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
     // deno-lint-ignore no-explicit-any
     return ((value as any)[Symbol.asyncIterator] != undefined);
-}
-
-async function* toAsyncIterable_<T>(iterable: Iterable<T>): AsyncIterable<T> {
-    for (const item of iterable) {
-        yield item;
-    }
 }
 
 function toAsyncIterable<T>(iterable: AnyIterable<T>): AsyncIterable<T> {
     if (isAsyncIterable(iterable)) {
         return iterable;
     }
-    return toAsyncIterable_(iterable);
+
+    async function* _toAsyncIterable(iterable: Iterable<T>) {
+        for (const item of iterable) {
+            yield item;
+        }
+    }
+
+    return generable(_toAsyncIterable)(iterable);
+}
+
+/**
+ * Converts a generator function to a function that returns a repeatable iterable.
+ * 
+ * Although Javascript generator functions behave as if they return iterables,
+ * the iterable they return can only be used once (it's really an iterator).
+ * 
+ * Use this function to create a new function that returns real, reusable iterables.
+ * 
+ * @param generator A generator function
+ */
+export function generable<Args extends unknown[], Result>(generator: (...t: Args) => AsyncGenerator<Result>): (...t: Args) => AsyncIterable<Result> {
+    // Javascript generators are not iterables (although they can be used that way ONCE!)
+    // Javascript generators are iterators.
+    // To create a real, reusable iterable, we need to capture the function that returns
+    // the generator and call that function each time the iterator is obtained.
+    return (...args) => {
+        return {
+            repeatable: true,
+            [Symbol.asyncIterator]: () => { return generator(...args); }
+        };
+    };
 }
 
 /** Converts an iterable or iterator into its value type */
@@ -96,7 +123,7 @@ function getIterator<T>(iterable: AnyIterable<T>) {
 }
 
 /** Implementation of the `zip` function accounting for TS compiler limitations */
-async function* _zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables) {
+async function* __zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables) {
     let iterators = iterables.map(getIterator);
     let its = (await Promise.all(iterators)).map(it => ({ done: false, iterator: it }));
     let remaining = its.length;
@@ -123,6 +150,8 @@ async function* _zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue:
         }
     }
 }
+
+const _zip = generable(__zip);
 
 /**
  * Use `zip` if you have multiple lists and you want a new list where
@@ -154,21 +183,26 @@ export function zip<Iterables extends AnyIterable<unknown>[], Value>(...args: [.
  * @param start The beginning of the specified segment.
  * @param end The end of the specified segment. This is exclusive of the element at the index 'end'.
  */
-export async function* slice<T>(iterable: AnyIterable<T>, start?: number, end?: number): AsyncIterable<T> {
+export function slice<T>(iterable: AnyIterable<T>, start?: number, end?: number): AsyncIterable<T> {
     const theStart = start || 0;
     const theEnd = end || Infinity;
-    let index = 0;
-    for await (let item of iterable) {
-        if (index >= theEnd) {
-            return;
-        }
 
-        if (index >= theStart) {
-            yield item;
-        }
+    async function* _slice() {
+        let index = 0;
+        for await (let item of iterable) {
+            if (index >= theEnd) {
+                return;
+            }
 
-        ++index;
+            if (index >= theStart) {
+                yield item;
+            }
+
+            ++index;
+        }
     }
+
+    return generable(_slice)();
 }
 
 /**
@@ -236,41 +270,54 @@ export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMa
  * @param newLength The desired length of the new list
  * @param filler The value used to spread out the list to the desired length
  */
-export async function* spread<Item, Filler>(iterable: AnyIterable<Item>, iterableLength: number, options: { newLength: number, filler: Filler }): AsyncIterable<Item | Filler> {
+export function spread<Item, Filler>(
+    iterable: AnyIterable<Item>,
+    iterableLength: number,
+    options: {
+        newLength: number,
+        filler: Filler
+    }
+): AsyncIterable<Item | Filler> {
     const fillerLength = options.newLength - iterableLength;
     if (fillerLength < 0) {
         throw "spread can only extend length";
     }
 
-    let fillerCount = 0;
-    let valueCount = 0;
+    async function* _spread() {
+        let fillerCount = 0;
+        let valueCount = 0;
 
-    for await (const item of iterable) {
-        yield item;
-        ++valueCount;
+        for await (const item of iterable) {
+            yield item;
+            ++valueCount;
 
-        // We want to start and end with a real value
-        // so we always produce a real value first then,
-        // to determine whether to produce a filler value, we test
-        // the current progress of the iterator for length - 1
-        // against the progress the filler would have if we were to produce the filler value.
-        // If producing a filler value wouldn't make filler progress greater than
-        // the iterator progress, we produce a filler value.
-        // (By 'progress' we mean what proportion of the total number of values of each
-        // type we have produced).
+            // We want to start and end with a real value
+            // so we always produce a real value first then,
+            // to determine whether to produce a filler value, we test
+            // the current progress of the iterator for length - 1
+            // against the progress the filler would have if we were to produce the filler value.
+            // If producing a filler value wouldn't make filler progress greater than
+            // the iterator progress, we produce a filler value.
+            // (By 'progress' we mean what proportion of the total number of values of each
+            // type we have produced).
 
-        while ((fillerCount < fillerLength) && ((valueCount / (iterableLength - 1)) >= ((fillerCount + 1) / fillerLength))) {
+            while ((fillerCount < fillerLength) && ((valueCount / (iterableLength - 1)) >= ((fillerCount + 1) / fillerLength))) {
+                yield options.filler;
+                ++fillerCount;
+            }
+        }
+
+        // console.log("valueCount", valueCount, typeof iterable);
+
+        // This is here through an abundance of caution.
+        // It could help if the iterable somehow produces fewer values than expected
+        // as it would ensure that the new list comes out at the expected length, but clearly,
+        // in that case, the distribution of real values and filler values would not be correct.
+        while (fillerCount < fillerLength) {
             yield options.filler;
             ++fillerCount;
         }
     }
 
-    // This is here through an abundance of caution.
-    // It could help if the iterable somehow produces fewer values than expected
-    // as it would ensure that the new list comes out at the expected length, but clearly,
-    // in that case, the distribution of real values and filler values would not be correct.
-    while (fillerCount < fillerLength) {
-        yield options.filler;
-        ++fillerCount;
-    }
+    return generable(_spread)();
 }
