@@ -1,5 +1,6 @@
 // Requires: [Deno]
 // Supports: [Typescript]
+import { generable } from "./utility.ts";
 
 // Callionica's minimal API for accessing the file system built on top of Deno's built-in, low-level file API
 // Scroll past the code for more detailed documentation.
@@ -36,7 +37,7 @@ function adaptFilePath(filePath: FilePath): FilePath {
 }
 
 /** Converts a file path to a file URL */
-export function toFileURL(filePath: FilePath) : URL {
+export function toFileURL(filePath: FilePath): URL {
     if (!(filePath instanceof URL)) {
         if (filePath.startsWith("file://")) {
             return new URL(filePath);
@@ -241,32 +242,37 @@ export async function readRange(fileOrPath: FileOrPath, range: ByteRange, buffer
  *  If a buffer is not supplied or if it is too small, the function will allocate an internal buffer
  *  that matches the length of the range. The buffer is only used to hold a single chunk.
  */
-export async function* readRanges(fileOrPath: FileOrPath, range: ByteRange, buffer?: Uint8Array) {
+export function readRanges(fileOrPath: FileOrPath, range: ByteRange, buffer?: Uint8Array): AsyncIterable<Uint8Array> {
     const start = range.start || 0;
     const length = byteRangeLength(range);
-    const workingBuffer = (buffer && buffer.length >= length)
-        ? buffer.subarray(0, length)
-        : new Uint8Array(length);
-    const fileHolder = await FileHolder.create(fileOrPath);
-    try {
-        const id = rid(fileHolder.file);
-        const position = await Deno.seek(id, start, Deno.SeekMode.Start);
-        while (true) {
-            const bytesRead = await readFull(id, workingBuffer);
-            const final = (bytesRead < workingBuffer.length);
-            if (bytesRead > 0) {
-                // Copy the data to return it to the caller
-                // because we're still using the buffer
-                yield workingBuffer.slice(0, bytesRead);
+
+    async function* _readRanges() {
+        const workingBuffer = (buffer && buffer.length >= length)
+            ? buffer.subarray(0, length)
+            : new Uint8Array(length);
+        const fileHolder = await FileHolder.create(fileOrPath);
+        try {
+            const id = rid(fileHolder.file);
+            const position = await Deno.seek(id, start, Deno.SeekMode.Start);
+            while (true) {
+                const bytesRead = await readFull(id, workingBuffer);
+                const final = (bytesRead < workingBuffer.length);
+                if (bytesRead > 0) {
+                    // Copy the data to return it to the caller
+                    // because we're still using the buffer
+                    yield workingBuffer.slice(0, bytesRead);
+                }
+                if (final) {
+                    // We've read all the data
+                    return;
+                }
             }
-            if (final) {
-                // We've read all the data
-                return;
-            }
+        } finally {
+            fileHolder.dispose();
         }
-    } finally {
-        fileHolder.dispose();
     }
+
+    return generable(_readRanges)();
 }
 
 /**
@@ -295,23 +301,26 @@ export async function readFile(fileOrPath: FileOrPath, buffer?: Uint8Array): Pro
 }
 
 /** Returns the file system entries contained in the specified folder */
-export async function* directoryEntries(folderPath: FilePath) : AsyncIterable<URL> {
+export function directoryEntries(folderPath: FilePath): AsyncIterable<URL> {
     if (!isFolderPath(folderPath)) {
         throw `directoryEntries failure: folderPath did not end with a slash '${folderPath}'`;
     }
 
     const url = toFileURL(folderPath);
 
-    for await (const child of Deno.readDir(url)) {
-        const childURL = new URL(child.name + (child.isDirectory ? SEPARATOR : ""), url);
-        // TODO Deno.readLink doesn't accept URL
-        // TODO Need to determine if target is a directory to ensure terminal slash on URL
-        // if (child.isSymlink) {
-        //     const target = await Deno.readLink(childURL);
-        //     yield toFileURL(target);
-        // }
-        yield childURL;
+    async function* _directoryEntries() {
+        for await (const child of Deno.readDir(url)) {
+            const childURL = new URL(child.name + (child.isDirectory ? SEPARATOR : ""), url);
+            // TODO Deno.readLink doesn't accept URL
+            // TODO Need to determine if target is a directory to ensure terminal slash on URL
+            // if (child.isSymlink) {
+            //     const target = await Deno.readLink(childURL);
+            //     yield toFileURL(target);
+            // }
+            yield childURL;
+        }
     }
+    return generable(_directoryEntries)();
 }
 
 export interface FileName {
