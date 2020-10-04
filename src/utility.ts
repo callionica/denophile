@@ -275,7 +275,7 @@ export function spread<Item, Filler>(
     iterableLength: number,
     options: {
         newLength: number,
-        filler: Filler
+        fillValue: Filler
     }
 ): AsyncIterable<Item | Filler> {
     const fillerLength = options.newLength - iterableLength;
@@ -302,7 +302,7 @@ export function spread<Item, Filler>(
             // type we have produced).
 
             while ((fillerCount < fillerLength) && ((valueCount / (iterableLength - 1)) >= ((fillerCount + 1) / fillerLength))) {
-                yield options.filler;
+                yield options.fillValue;
                 ++fillerCount;
             }
         }
@@ -314,7 +314,7 @@ export function spread<Item, Filler>(
         // as it would ensure that the new list comes out at the expected length, but clearly,
         // in that case, the distribution of real values and filler values would not be correct.
         while (fillerCount < fillerLength) {
-            yield options.filler;
+            yield options.fillValue;
             ++fillerCount;
         }
     }
