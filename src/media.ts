@@ -111,6 +111,8 @@ const standardDataExtractors = (function () {
 
     let dateSeparator = alt(dash, period, ws);
 
+    let yearOrDate = grp(year, opt(dateSeparator, month, dateSeparator, day));
+
     let group = phrase;
     let subgroupNumber = number("subgroupNumber");
     let subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
@@ -125,7 +127,7 @@ const standardDataExtractors = (function () {
         ),
         re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
             cap("group")(group), separator,
-            year, dateSeparator, month, dateSeparator, day, alt(separator, ws),
+            yearOrDate, alt(separator, ws),
             cap("name")(name)
         ),
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
@@ -136,7 +138,7 @@ const standardDataExtractors = (function () {
         ),
         re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
-            subgroupNumber, dash, number("number"), opt(alt(separator, grp(period, ws), ws),
+            subgroupNumber, alt(dash, "x"), number("number"), opt(alt(separator, grp(period, ws), ws),
                 cap("name")(name))
         ),
         re(
@@ -156,7 +158,7 @@ const standardDataExtractors = (function () {
         re(
             cap("group")(group), separator,
             cap("name")(name),
-            ws, leftParen, year, opt(dateSeparator, month, dateSeparator, day), rightParen
+            ws, leftParen, yearOrDate, rightParen
         ),
         re(
             cap("group")(group), separator,
@@ -164,7 +166,7 @@ const standardDataExtractors = (function () {
         ),
         re( // Movie format: "Rose (2005)"
             cap("name")(name),
-            ws, leftParen, year, opt(dateSeparator, month, dateSeparator, day), rightParen
+            ws, leftParen, yearOrDate, rightParen
         ),
     ];
 })();
