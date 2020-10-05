@@ -4,6 +4,9 @@
 // The layers are:
 // media.ts -> satellite.ts -> junction.ts -> file.ts
 
+// TODO - satellites in containers that aren't group/subgroup
+// TODO - 
+
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 
@@ -30,7 +33,7 @@ export interface Data {
     day?: string;
 }
 
-function parseData(text: string, possibles: RegExp[]): Data {
+export function parseData(text: string, possibles: RegExp[] = standardDataExtractors): Data {
     let match;
     for (const possible of possibles) {
         match = possible.exec(text);
@@ -84,11 +87,14 @@ const standardDataExtractors = (function () {
     }
 
     let period = `[.]`;
+    let leftParen = `[(]`;
+    let rightParen = `[)]`;
     let dash = `-`;
     let colon = `:`;
 
     let separator = grp(ws, dash, ws);
 
+    let chapter = alt(`Chapter`, `Ch[.]?`, `C`);
     let season = alt(`Series`, `Season`, `S`);
     let episode = alt(`Episode`, `Ep[.]?`, `E`);
     let track = alt(`Track`);
@@ -107,8 +113,8 @@ const standardDataExtractors = (function () {
 
     let group = phrase;
     let subgroupNumber = number("subgroupNumber");
-    let subgroup = alt(grp(season, ws, subgroupNumber), phrase);
-    let name = alt(grp(alt(episode, track), ws, number("numberFromName")), phrase);
+    let subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
+    let name = alt(grp(alt(episode, track, chapter), ws, number("numberFromName")), phrase);
 
     return [
         re(
@@ -130,7 +136,7 @@ const standardDataExtractors = (function () {
         ),
         re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
-            subgroupNumber, dash, number("number"), opt(alt(separator, ws),
+            subgroupNumber, dash, number("number"), opt(alt(separator, grp(period, ws), ws),
                 cap("name")(name))
         ),
         re(
@@ -149,7 +155,16 @@ const standardDataExtractors = (function () {
         ),
         re(
             cap("group")(group), separator,
+            cap("name")(name),
+            ws, leftParen, year, opt(dateSeparator, month, dateSeparator, day), rightParen
+        ),
+        re(
+            cap("group")(group), separator,
             cap("name")(name)
+        ),
+        re( // Movie format: "Rose (2005)"
+            cap("name")(name),
+            ws, leftParen, year, opt(dateSeparator, month, dateSeparator, day), rightParen
         ),
     ];
 })();
