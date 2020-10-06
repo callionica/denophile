@@ -20,7 +20,7 @@ export const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
 export interface Data {
     name?: string; // Track name, Episode name
     numberFromName?: string; // Track number, episode number if it came from the name
-    datelessName?: string;
+    datelessName?: string; // Name with date parenthetical removed
 
     group?: string; // Artist, Show
     subgroup?: string; // Album, Season
