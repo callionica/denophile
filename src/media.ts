@@ -44,7 +44,9 @@ export function parseData(text: string, possibles: RegExp[] = standardDataExtrac
         }
     }
 
-    return match ? { ...match.groups } : {};
+    const result = match ? { ...match.groups } : {};
+    Object.keys(result).forEach(key => (result[key] === undefined) && delete result[key])
+    return result;
 }
 
 const standardDataExtractors = (function () {
@@ -244,6 +246,12 @@ export class MediaPrimary extends Primary {
             result.group = cleanup(result.group);
         }
 
+        if (result.subgroupNumber === undefined) {
+            if (result.numberFromSubgroupName !== undefined) {
+                result.subgroupNumber = result.numberFromSubgroupName;
+            }
+        }
+
         if (result.subgroup === undefined) {
             if (result.subgroupNumber !== undefined) {
                 result.subgroup = `Season ${result.subgroupNumber}`;
@@ -261,12 +269,6 @@ export class MediaPrimary extends Primary {
         if (result.number === undefined) {
             if (result.numberFromName !== undefined) {
                 result.number = result.numberFromName;
-            }
-        }
-
-        if (result.subgroupNumber === undefined) {
-            if (result.numberFromSubgroupName !== undefined) {
-                result.subgroupNumber = result.numberFromSubgroupName;
             }
         }
 
