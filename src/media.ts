@@ -25,6 +25,7 @@ export interface Data {
     group?: string; // Artist, Show
     subgroup?: string; // Album, Season
     subgroupNumber?: string; // Season number
+    numberFromSubgroupName?: string;
 
     number?: string;  // Track number, episode number
     endNumber?: string;  // Last track number, episode number in a range
@@ -130,7 +131,7 @@ const standardDataExtractors = (function () {
 
     const itemNumber = grp(opt(subgroupNumber, alt(dash, "x")), number("number"));
 
-    const subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
+    const subgroup = alt(grp(alt(season, chapter), ws, number("numberFromSubgroupName")), phrase);
     const name = alt(
         grp(alt(episode, track, chapter), ws, number("numberFromName")),
         grp(cap("datelessName")(phrase), ws, leftParen, yearOrDate, rightParen),
@@ -160,7 +161,7 @@ const standardDataExtractors = (function () {
         re(
             cap("group")(group), separator,
             cap("subgroup")(subgroup), separator,
-            number_prefix("number"),
+            itemNumber, numberSeparator,
             cap("name")(name)
         ),
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
@@ -259,6 +260,12 @@ export class MediaPrimary extends Primary {
         if (result.number === undefined) {
             if (result.numberFromName !== undefined) {
                 result.number = result.numberFromName;
+            }
+        }
+
+        if (result.subgroupNumber === undefined) {
+            if (result.numberFromSubgroupName !== undefined) {
+                result.subgroupNumber = result.numberFromSubgroupName;
             }
         }
 
