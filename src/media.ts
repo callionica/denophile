@@ -120,12 +120,12 @@ const standardDataExtractors = (function () {
     const group = phrase;
 
     const subgroupNumber = number("subgroupNumber");
-    
+
     const plexNumber = grp(
         season, subgroupNumber, episode, number("number"),
         opt(opt(dash), episode, number("endNumber"))
     );
-    
+
     const twoPartNumber = grp(subgroupNumber, alt(dash, "x"), number("number"));
 
     const itemNumber = grp(opt(subgroupNumber, alt(dash, "x")), number("number"));
@@ -149,7 +149,7 @@ const standardDataExtractors = (function () {
     // The text 'Chapter' and 'Season' (and variations like 'Ch' and 'S') indicate a subgroup
     // A date may appear in subgroup or item number position. The date is assumed to
     // apply to the item, and the subgroup and ordering is assumed to be generated from the date.
-    // A date may also appear in parentheses as part of the name. In this case, `name` contains the name and parenthetical and `datelessName` leaves out the parenthetical.
+    // A date may also appear in parentheses as part of the name. In this case, `name` contains the name and parenthetical, and `datelessName` leaves out the parenthetical.
     return [
         re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
             cap("group")(group), separator,
@@ -180,7 +180,7 @@ const standardDataExtractors = (function () {
         ),
         re(
             cap("group")(group), separator,
-            number_prefix("number"),
+            itemNumber, numberSeparator,
             cap("name")(name)
         ),
         re(
@@ -188,7 +188,7 @@ const standardDataExtractors = (function () {
             cap("name")(name)
         ),
         re( // Audio format (artist & album come from folders): "01 Rose"
-            number_prefix("number"),
+            itemNumber, numberSeparator,
             cap("name")(name)
         ),
         re(
