@@ -138,27 +138,28 @@ const standardDataExtractors = (function () {
     // apply to the item, and the subgroup and ordering is assumed to be generated from the date.
     // A date may also appear in parentheses as part of the name. In this case, `name` contains the name and parenthetical and `datelessName` leaves out the parenthetical.
     return [
+        re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
+            cap("group")(group), separator,
+            yearOrDate, alt(separator, ws),
+            opt(number_prefix("number")),
+            cap("name")(datelessName)
+        ),
         re(
             cap("group")(group), separator,
             cap("subgroup")(subgroup), separator,
             number_prefix("number"),
             cap("name")(name)
         ),
-        re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
-            cap("group")(group), separator,
-            yearOrDate, alt(separator, ws),
-            cap("name")(datelessName)
-        ),
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
             opt(cap("group")(group), separator),
             season, subgroupNumber, episode, number("number"),
-            opt(opt(dash), episode, number("endNumber")), separator,
-            cap("name")(name)
+            opt(opt(dash), episode, number("endNumber")),
+            opt(separator, cap("name")(name))
         ),
         re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
-            subgroupNumber, alt(dash, "x"), number("number"), opt(alt(separator, grp(period, ws), ws),
-                cap("name")(name))
+            subgroupNumber, alt(dash, "x"), number("number"),
+            opt(alt(separator, grp(period, ws), ws), cap("name")(name))
         ),
         re(
             cap("group")(group), separator,
