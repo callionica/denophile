@@ -104,7 +104,9 @@ const standardDataExtractors = (function () {
     const phrase = `(?:.{0,64}\\S)`;
     const number = (capture: keyof Data) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
 
-    const number_prefix = (capture: keyof Data) => grp(number(capture), alt(separator, grp(period, ws), ws));
+    const numberSeparator = alt(separator, grp(period, ws), ws);
+    const number_prefix = (capture: keyof Data) => grp(number(capture), numberSeparator);
+
 
     const dd = alt(`[0][123456789]`, `[1][0123456789]`, `[2][0123456789]`, `[3][01]`);
     const mm = alt(`[0][123456789]`, `[1][012]`);
@@ -116,7 +118,18 @@ const standardDataExtractors = (function () {
     const yearOrDate = grp(cap("year")(yyyy), opt(dateSeparator, cap("month")(mm), dateSeparator, cap("day")(dd)));
 
     const group = phrase;
+
     const subgroupNumber = number("subgroupNumber");
+    const plexNumber = grp(
+        season, subgroupNumber, episode, number("number"),
+        opt(opt(dash), episode, number("endNumber"))
+    );
+    const twoPartNumber = grp(subgroupNumber, alt(dash, "x"), number("number"));
+    const itemNumber = grp(
+        season, subgroupNumber, episode, number("number"),
+        opt(opt(dash), episode, number("endNumber"))
+    );
+
     const subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
     const name = alt(
         grp(alt(episode, track, chapter), ws, number("numberFromName")),
@@ -152,14 +165,13 @@ const standardDataExtractors = (function () {
         ),
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
             opt(cap("group")(group), separator),
-            season, subgroupNumber, episode, number("number"),
-            opt(opt(dash), episode, number("endNumber")),
+            plexNumber,
             opt(separator, cap("name")(name))
         ),
         re( // Preferred TV format: "Doctor Who - 01-01 Rose"
             opt(cap("group")(group), separator),
-            subgroupNumber, alt(dash, "x"), number("number"),
-            opt(alt(separator, grp(period, ws), ws), cap("name")(name))
+            twoPartNumber,
+            opt(numberSeparator, cap("name")(name))
         ),
         re(
             cap("group")(group), separator,
