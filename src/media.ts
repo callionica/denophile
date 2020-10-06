@@ -52,7 +52,8 @@ const standardDataExtractors = (function () {
     // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
 
     // Whitespace
-    const ws = `(?:\\s{1,4})`;
+    //const ws = `(?:\\s{1,4})`;
+    const ws = `(?:[^\\S\u00A0]{1,4})`; // whitespace except non-breaking space
 
     // Create a regular expression
     function re(...patterns: string[]) {
