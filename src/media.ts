@@ -20,6 +20,7 @@ export const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
 export interface Data {
     name?: string; // Track name, Episode name
     numberFromName?: string; // Track number, episode number if it came from the name
+    datelessName?: string;
 
     group?: string; // Artist, Show
     subgroup?: string; // Album, Season
@@ -50,7 +51,7 @@ const standardDataExtractors = (function () {
     // Because of greedy matching \s*(?<x>.*\S)\s* means that x starts and ends with non-whitespace
 
     // Whitespace
-    let ws = `(?:\\s{1,4})`;
+    const ws = `(?:\\s{1,4})`;
 
     // Create a regular expression
     function re(...patterns: string[]) {
@@ -86,38 +87,56 @@ const standardDataExtractors = (function () {
         }
     }
 
-    let period = `[.]`;
-    let leftParen = `[(]`;
-    let rightParen = `[)]`;
-    let dash = `-`;
-    let colon = `:`;
+    const period = `[.]`;
+    const leftParen = `[(]`;
+    const rightParen = `[)]`;
+    const dash = `-`;
+    const colon = `:`;
 
-    let separator = grp(ws, dash, ws);
+    const separator = grp(ws, dash, ws);
 
-    let chapter = alt(`Chapter`, `Ch[.]?`, `C`);
-    let season = alt(`Series`, `Season`, `S`);
-    let episode = alt(`Episode`, `Ep[.]?`, `E`);
-    let track = alt(`Track`);
+    const chapter = alt(`Chapter`, `Ch[.]?`, `C`);
+    const season = alt(`Series`, `Season`, `S`);
+    const episode = alt(`Episode`, `Ep[.]?`, `E`);
+    const track = alt(`Track`);
 
-    let digits = (count: number) => `(?:\\d{${count}})`;
-    let phrase = `(?:.{0,64}\\S)`;
-    let number = (capture: keyof Data) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
+    const digits = (count: number) => `(?:\\d{${count}})`;
+    const phrase = `(?:.{0,64}\\S)`;
+    const number = (capture: keyof Data) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
 
-    let number_prefix = (capture: keyof Data) => grp(number(capture), alt(separator, grp(period, ws), ws));
+    const number_prefix = (capture: keyof Data) => grp(number(capture), alt(separator, grp(period, ws), ws));
 
-    let year = cap("year")(digits(4));
-    let month = cap("month")(digits(2));
-    let day = cap("day")(digits(2));
+    const dd = alt(`[0][123456789]`, `[1][0123456789]`, `[2][0123456789]`, `[3][01]`);
+    const mm = alt(`[0][123456789]`, `[1][012]`);
+    const yyyy = digits(4);
 
-    let dateSeparator = alt(dash, period, ws);
+    const dateSeparator = alt(dash, period, ws);
 
-    let yearOrDate = grp(year, opt(dateSeparator, month, dateSeparator, day));
+    // A 4 digit year or a full YYYY-MM-DD date
+    const yearOrDate = grp(cap("year")(yyyy), opt(dateSeparator, cap("month")(mm), dateSeparator, cap("day")(dd)));
 
-    let group = phrase;
-    let subgroupNumber = number("subgroupNumber");
-    let subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
-    let name = alt(grp(alt(episode, track, chapter), ws, number("numberFromName")), phrase);
+    const group = phrase;
+    const subgroupNumber = number("subgroupNumber");
+    const subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
+    const name = alt(
+        grp(alt(episode, track, chapter), ws, number("numberFromName")),
+        grp(cap("datelessName")(phrase), ws, leftParen, yearOrDate, rightParen),
+        phrase
+    );
+    const datelessName = alt(
+        grp(alt(episode, track, chapter), ws, number("numberFromName")),
+        phrase
+    );
 
+    // Basics:
+    // When there are three sections, it's `group - subgroup - name`
+    // When there are two sections, it's `group - name`
+    // When there is one section, it's `name`
+    // `name` can be prefixed with a number in most formats
+    // The text 'Chapter' and 'Season' (and variations like 'Ch' and 'S') indicate a subgroup
+    // A date may appear in subgroup or item number position. The date is assumed to
+    // apply to the item, and the subgroup and ordering is assumed to be generated from the date.
+    // A date may also appear in parentheses as part of the name. In this case, `name` contains the name and parenthetical and `datelessName` leaves out the parenthetical.
     return [
         re(
             cap("group")(group), separator,
@@ -128,7 +147,7 @@ const standardDataExtractors = (function () {
         re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
             cap("group")(group), separator,
             yearOrDate, alt(separator, ws),
-            cap("name")(name)
+            cap("name")(datelessName)
         ),
         re( // Plex TV format: "Doctor Who - s1e1 - Rose"
             opt(cap("group")(group), separator),
@@ -157,16 +176,10 @@ const standardDataExtractors = (function () {
         ),
         re(
             cap("group")(group), separator,
-            cap("name")(name),
-            ws, leftParen, yearOrDate, rightParen
-        ),
-        re(
-            cap("group")(group), separator,
             cap("name")(name)
         ),
-        re( // Movie format: "Rose (2005)"
-            cap("name")(name),
-            ws, leftParen, yearOrDate, rightParen
+        re(
+            cap("name")(name)
         ),
     ];
 })();
@@ -244,6 +257,10 @@ export class MediaPrimary extends Primary {
             result.name = cleanup(result.name);
         }
 
+        if (result.datelessName === undefined) {
+            result.datelessName = result.name;
+        }
+
         return result;
     }
 
@@ -306,7 +323,7 @@ export class MediaPrimary extends Primary {
      * @param extensions Array of extensions to match
      */
     async findSatellites(extensions: string[]): Promise<Satellite<this>[]> {
-        
+
         const getSatellites = async (primary: this) => {
             const match = (s: Satellite<this>) => {
                 return s.extension && extensions.includes(s.extension.toLowerCase());
