@@ -120,15 +120,15 @@ const standardDataExtractors = (function () {
     const group = phrase;
 
     const subgroupNumber = number("subgroupNumber");
+    
     const plexNumber = grp(
         season, subgroupNumber, episode, number("number"),
         opt(opt(dash), episode, number("endNumber"))
     );
+    
     const twoPartNumber = grp(subgroupNumber, alt(dash, "x"), number("number"));
-    const itemNumber = grp(
-        season, subgroupNumber, episode, number("number"),
-        opt(opt(dash), episode, number("endNumber"))
-    );
+
+    const itemNumber = grp(opt(subgroupNumber, alt(dash, "x")), number("number"));
 
     const subgroup = alt(grp(alt(season, chapter), ws, subgroupNumber), phrase);
     const name = alt(
@@ -154,7 +154,7 @@ const standardDataExtractors = (function () {
         re( // Date TV format: "Doctor Who - 2005-03-26 - Rose"
             cap("group")(group), separator,
             yearOrDate, alt(separator, ws),
-            opt(number_prefix("number")),
+            opt(itemNumber, numberSeparator),
             cap("name")(datelessName)
         ),
         re(
