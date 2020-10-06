@@ -165,17 +165,17 @@ const standardDataExtractors = (function () {
             cap("subgroup")(subgroup), separator,
             cap("name")(name)
         ),
+        re(
+            cap("group")(group), separator,
+            number_prefix("number"),
+            cap("name")(name)
+        ),
+        re(
+            cap("group")(group), separator,
+            cap("name")(name)
+        ),
         re( // Audio format (artist & album come from folders): "01 Rose"
             number_prefix("number"),
-            cap("name")(name)
-        ),
-        re(
-            cap("group")(group), separator,
-            number_prefix("number"),
-            cap("name")(name)
-        ),
-        re(
-            cap("group")(group), separator,
             cap("name")(name)
         ),
         re(
@@ -259,6 +259,8 @@ export class MediaPrimary extends Primary {
 
         if (result.datelessName === undefined) {
             result.datelessName = result.name;
+        } else {
+            result.datelessName = cleanup(result.datelessName);
         }
 
         return result;
