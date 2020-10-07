@@ -234,8 +234,12 @@ export class MediaPrimary extends Primary {
 
         if (result.group === undefined) {
             if (this.parent) {
-                if (this.parent.parent) {
-                    result.group = this.parent.parent.name;
+                const grandParent = this.parent.parent;
+                if ((grandParent !== undefined) && (grandParent !== this.root)) {
+                    result.group = grandParent.name;
+                    if (result.subgroup === undefined) {
+                        result.subgroup = this.parent.name;
+                    }
                 } else {
                     result.group = this.parent.name;
                 }
@@ -257,8 +261,6 @@ export class MediaPrimary extends Primary {
                 result.subgroup = `Season ${result.subgroupNumber}`;
             } else if (result.year !== undefined) {
                 result.subgroup = result.year;
-            } else if (this.parent && this.parent.parent) {
-                result.subgroup = this.parent.name;
             }
         }
 
