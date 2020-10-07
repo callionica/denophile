@@ -1,3 +1,4 @@
+import type { FileName } from "./file.ts";
 // satellite.ts provides a view over a file system that reveals associations between files
 // Some files are Primaries and some are Satellites
 // A Satellite's file name starts with the name of a Primary
@@ -116,6 +117,25 @@ export class Primary {
         }
     }
 
+    /**
+     * Resolve a path starting from the current item
+     * @param path The list of file or folder names to follow
+     */
+    async resolve(path: Iterable<FileName>): Promise<this | undefined> {
+        // deno-lint-ignore no-this-alias
+        let current = this;
+        for (const piece of path) {
+            const next = (await current.children()).find(child =>
+                (child.name === piece.name) && (child.extension === piece.extension)
+            );
+            if (next === undefined) {
+                return undefined;
+            }
+            current = next;
+        }
+        return current;
+    }
+
     refresh() {
         this.entryChildren_ = undefined;
         this.children_ = undefined;
@@ -132,17 +152,17 @@ export class Primary {
         return entry.name.length > 0;
     }
 
-    createChild(c: Entry) : this {
-        type ctorType = { new<T extends Primary>(entity: Entry, parent?: T) : T};
+    createChild(c: Entry): this {
+        type ctorType = { new <T extends Primary>(entity: Entry, parent?: T): T };
         const ctor = this.constructor as ctorType;
         return new ctor(c, this);
     }
 
     async entryChildren(): Promise<Entry[]> {
         if (this.entryChildren_ === undefined) {
-            this.entryChildren_ = await this.entry.children();    
+            this.entryChildren_ = await this.entry.children();
         }
-        
+
         return this.entryChildren_;
     }
 
@@ -151,7 +171,7 @@ export class Primary {
             const c = await this.entryChildren();
             this.children_ = c.filter(c => c.isFolder || this.isPrimary(c)).map(c => this.createChild(c));
         }
-        
+
         return this.children_;
     }
 
