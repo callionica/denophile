@@ -4,8 +4,6 @@
 // The layers are:
 // media.ts -> satellite.ts -> junction.ts -> file.ts
 
-// TODO - satellites in containers that aren't group/subgroup
-// TODO - 
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
@@ -33,6 +31,40 @@ export interface Data {
     year?: string;
     month?: string;
     day?: string;
+}
+
+export function stringifyData(data: Data) {
+
+    const group = data.group;
+
+    let subgroup = "";
+    if (
+        (data.subgroup !== undefined)
+        && (data.subgroup !== `Season ${data.subgroupNumber}`)
+        && (data.subgroup !== `Series ${data.subgroupNumber}`)
+    ) {
+        subgroup = `${data.subgroup} - `;
+    }
+
+    let date = "";
+    if ((data.year !== undefined)) {
+        if ((data.month !== undefined) && (data.day !== undefined)) {
+            date = `${data.year}-${data.month}-${data.day} `;
+        } else {
+            date = `${data.year} `;
+        }
+    }
+
+    let numbers = "";
+    if (data.subgroupNumber && data.number) {
+        numbers = `${data.subgroupNumber?.padStart(2, "0")}-${data.number?.padStart(2, "0")} `;
+    } else if (data.number) {
+        numbers = `${data.number?.padStart(2, "0")}. `;
+    }
+
+    const name = data.datelessName;
+
+    return `${group} - ${subgroup}${date}${numbers}${name}`;
 }
 
 export function parseData(text: string, possibles: RegExp[] = standardDataExtractors): Data {
@@ -116,7 +148,7 @@ const standardDataExtractors = (function () {
     const mm = alt(`[0][123456789]`, `[1][012]`);
     const yyyy = digits(4);
 
-    const dateSeparator = alt(dash, period, ws);
+    const dateSeparator = alt(dash, period);
 
     // A 4 digit year or a full YYYY-MM-DD date
     const yearOrDate = grp(cap("year")(yyyy), opt(dateSeparator, cap("month")(mm), dateSeparator, cap("day")(dd)));
