@@ -202,11 +202,11 @@ const standardDataExtractors = (function () {
 })();
 
 export class MediaPrimary extends Primary {
-    data_?: Data;
+    info_?: Data;
 
     refresh() {
         super.refresh();
-        this.data_ = undefined;
+        this.info_ = undefined;
     }
 
     isPrimary(entry: Entry): boolean {
@@ -217,15 +217,12 @@ export class MediaPrimary extends Primary {
         return MEDIA_EXTENSIONS.includes(entry.extension.toLowerCase());
     }
 
-    get unprocessedData(): Data {
-        if (this.data_ === undefined) {
-            this.data_ = parseData(this.name, standardDataExtractors);
-        }
-        return this.data_;
-    }
-
     get info(): Data {
-        let result = { ...this.unprocessedData };
+        if (this.info_ !== undefined) {
+            return this.info_;
+        }
+
+        let result = parseData(this.name, standardDataExtractors);
 
         function cleanup(text: string) {
             text = text.replace(/[_\s]+/g, " ");
@@ -233,7 +230,7 @@ export class MediaPrimary extends Primary {
         }
 
         if (result.group === undefined) {
-            if (this.parent) {
+            if (this.parent !== undefined) {
                 const grandParent = this.parent.parent;
                 if ((grandParent !== undefined) && (grandParent !== this.root)) {
                     result.group = grandParent.name;
@@ -288,6 +285,7 @@ export class MediaPrimary extends Primary {
             result.datelessName = cleanup(result.datelessName);
         }
 
+        this.info_ = result;
         return result;
     }
 
@@ -330,6 +328,24 @@ export class MediaPrimary extends Primary {
             if ((parent.name === subgroup) && (parent !== this.groupFolder)) {
                 return parent;
             }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * The container folder is the parent folder if that folder hasn't been identified as
+     * the group or subgroup folder. Otherwise there is no container folder.
+     * 
+     * You'll only get a container folder if the filename contains a group and it's different
+     * from the name of the parent folder. If the filename doesn't contain a group, the parent
+     * folder defines a group instead of a container.
+     */
+    get containerFolder(): this | undefined {
+        const parent = this.parent;
+
+        if ((parent !== this.groupFolder) && (parent !== this.subgroupFolder)) {
+            return parent;
         }
 
         return undefined;
