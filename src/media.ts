@@ -352,6 +352,13 @@ export class MediaPrimary extends Primary {
     }
 
     /**
+     * The context is the name of the group or of the container.
+     */
+    get context(): string {
+        return this.info?.group || this.containerFolder?.name || "";
+    }
+
+    /**
      * Searches for matching satellites starting at the current primary and then
      * through ancestor primaries if no match is found at a lower level.
      * 
