@@ -50,14 +50,20 @@ export function standardFilename(data: Data) {
         group += " - ";
     }
 
+    const subgroupNumber = data.subgroupNumber || data.numberFromSubgroupName;
+
     let subgroup = "";
-    if (
-        (data.subgroup !== undefined)
-        && (data.subgroup !== `Season ${data.subgroupNumber}`)
-        && (data.subgroup !== `Series ${data.subgroupNumber}`)
-    ) {
-        subgroup = `${data.subgroup} - `;
+    if (data.subgroup !== undefined) {
+        if ((data.number !== undefined) &&
+            ((data.subgroup === `Season ${subgroupNumber}`)
+                || (data.subgroup === `Series ${subgroupNumber}`))
+        ) {
+            // nothing
+        } else {
+            subgroup = `${data.subgroup} - `;
+        }
     }
+
 
     let date = "";
     if ((data.year !== undefined)) {
@@ -80,8 +86,8 @@ export function standardFilename(data: Data) {
 
 
     let numbers = "";
-    if (data.subgroupNumber && data.number) {
-        numbers = `${data.subgroupNumber?.padStart(2, "0")}-${data.number?.padStart(2, "0")}`;
+    if (subgroupNumber && data.number) {
+        numbers = `${subgroupNumber?.padStart(2, "0")}-${data.number?.padStart(2, "0")}`;
     } else if (data.number) {
         numbers = `${data.number?.padStart(2, "0")}`;
     }
