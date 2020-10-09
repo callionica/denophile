@@ -21,6 +21,7 @@ export interface Data {
     datelessName?: string; // Name with date parenthetical removed
 
     group?: string; // Artist, Show
+
     subgroup?: string; // Album, Season
     subgroupNumber?: string; // Season number
     numberFromSubgroupName?: string;
@@ -33,9 +34,21 @@ export interface Data {
     day?: string;
 }
 
-export function stringifyData(data: Data) {
+/**
+ * Creates a standard filename from group, subgroup, date, name, etc.
+ * 
+ * @param data The data from which to create the filename.
+ */
+export function standardFilename(data: Data) {
 
-    const group = data.group;
+    let group = "";
+    if (data.group !== undefined) {
+        group = data.group;
+    }
+
+    if (group.length > 0) {
+        group += " - ";
+    }
 
     let subgroup = "";
     if (
@@ -49,11 +62,22 @@ export function stringifyData(data: Data) {
     let date = "";
     if ((data.year !== undefined)) {
         if ((data.month !== undefined) && (data.day !== undefined)) {
-            date = `${data.year}-${data.month}-${data.day} `;
+            date = `${data.year}-${data.month}-${data.day}`;
         } else {
-            date = `${data.year} `;
+            date = `${data.year}`;
         }
     }
+
+    let parenthetical = "";
+    if (date.length > 0) {
+        if (data.group === undefined) {
+            parenthetical = ` (${date})`;
+            date = "";
+        } else {
+            date += " - ";
+        }
+    }
+
 
     let numbers = "";
     if (data.subgroupNumber && data.number) {
@@ -70,9 +94,9 @@ export function stringifyData(data: Data) {
         numbers += " ";
     }
 
-    const name = data.datelessName;
+    const name = data.datelessName || data.name || "";
 
-    return `${group} - ${subgroup}${date}${numbers}${name}`;
+    return `${group}${subgroup}${date}${numbers}${name}${parenthetical}`;
 }
 
 export function parseData(text: string, possibles: RegExp[] = standardDataExtractors): Data {
