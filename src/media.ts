@@ -57,9 +57,17 @@ export function stringifyData(data: Data) {
 
     let numbers = "";
     if (data.subgroupNumber && data.number) {
-        numbers = `${data.subgroupNumber?.padStart(2, "0")}-${data.number?.padStart(2, "0")} `;
+        numbers = `${data.subgroupNumber?.padStart(2, "0")}-${data.number?.padStart(2, "0")}`;
     } else if (data.number) {
-        numbers = `${data.number?.padStart(2, "0")}. `;
+        numbers = `${data.number?.padStart(2, "0")}`;
+    }
+
+    if (data.endNumber) {
+        numbers += `-to-${data.endNumber?.padStart(2, "0")}`;
+    }
+
+    if (numbers.length > 0) {
+        numbers += " ";
     }
 
     const name = data.datelessName;
@@ -162,9 +170,17 @@ const standardDataExtractors = (function () {
         opt(opt(dash), episode, number("endNumber"))
     );
 
-    const twoPartNumber = grp(subgroupNumber, alt(dash, "x"), number("number"));
+    const twoPartNumber = grp(
+        subgroupNumber, alt(dash, "x"),
+        number("number"),
+        opt(opt(alt('to', '-to-')), number("endNumber")),
+    );
 
-    const itemNumber = grp(opt(subgroupNumber, alt(dash, "x")), number("number"));
+    const itemNumber = grp(
+        opt(subgroupNumber, alt(dash, "x")),
+        number("number"),
+        opt(opt(alt('to', '-to-')), number("endNumber")),
+    );
 
     const subgroup = alt(grp(alt(season, chapter), ws, number("numberFromSubgroupName")), phrase);
     const name = alt(
