@@ -1,9 +1,9 @@
 import type { FileName } from "./file.ts";
-// satellite.ts provides a view over a file system that reveals associations between files
-// Some files are Primaries and some are Satellites
+// satellite.ts provides a view over a file system that reveals associations between files.
+// Some files are Primaries and some are Satellites.
 // A Satellite's file name starts with the name of a Primary
 // and is a sibling of the Primary (if the Primary is a file or folder)
-// or a child of the Primary (if the Primary is a folder)
+// or a child of the Primary (if the Primary is a folder).
 // Files that are prefixed with "folder" are also satellites of their parent folder.
 // A satellite may have tags which are period-separated strings appended to the name of the file.
 // One of these tags can indicate the primary language of the satellite.
@@ -53,6 +53,7 @@ export class Satellite<T extends Primary> {
         return this.entry.isFolder;
     }
 
+    /** The primary language of this satellite resource */
     get language(): string {
 
         function tag2language(tag: string): string | undefined {
@@ -147,12 +148,24 @@ export class Primary {
         this.parent = parent as this;
     }
 
+    /**
+     * Override isPrimary to customize what files and folders can be primaries.
+     * By default, anything with a name can be a primary.
+     * Being a primary doesn't prevent the item also being a satellite.
+     */
     isPrimary(entry: Entry): boolean {
-        // Anything with a name can be a primary
-        // (It could also be a satellite of some other primary)
         return entry.name.length > 0;
     }
 
+    /**
+     * Override createChild if you want to customize the objects used to represent children.
+     * 
+     * You don't need to override createChild if all objects in the tree are of the same type,
+     * because the default implementation will create a new object that is the same type as the
+     * current instance.
+     * 
+     * @param c The Entry which is being wrapped
+     */
     createChild(c: Entry): this {
         type ctorType = { new <T extends Primary>(entity: Entry, parent?: T): T };
         const ctor = this.constructor as ctorType;
