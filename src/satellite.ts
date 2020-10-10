@@ -9,6 +9,7 @@ import type { FileName } from "./file.ts";
 // One of these tags can indicate the primary language of the satellite.
 
 import type { Entry } from "./junction.ts";
+import { generable } from "./utility.ts";
 
 function first<Item, Result>(iterable: Iterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Result | undefined {
     let result: Result | undefined;
@@ -166,6 +167,9 @@ export class Primary {
         return this.entryChildren_;
     }
 
+    /**
+     * The folders and primaries that are direct children of this object.
+     */
     async children(): Promise<this[]> {
         if (this.children_ === undefined) {
             const c = await this.entryChildren();
@@ -173,6 +177,21 @@ export class Primary {
         }
 
         return this.children_;
+    }
+
+    descendants(): AsyncIterable<this> {
+        // deno-lint-ignore no-this-alias
+        const self = this;
+
+        async function* descendants_() {
+            const kids = await self.children();
+            for (const kid of kids) {
+                yield kid;
+                yield* kid.descendants();
+            }
+        }
+
+        return generable(descendants_)();
     }
 
     async satellites(): Promise<Satellite<this>[]> {
