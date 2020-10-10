@@ -430,12 +430,12 @@ export class MediaPrimary extends Primary {
     }
 
     /**
-     * The context folder is the container folder or the group folder.
+     * The context folder is the container folder, the subgroup folder, or the group folder.
      * 
      * This is a good candidate for grouping related media together in the UI.
      */
     get contextFolder(): this | undefined {
-        return this.containerFolder || this.groupFolder;
+        return this.containerFolder || this.subgroupFolder || this.groupFolder;
     }
 
     /**
