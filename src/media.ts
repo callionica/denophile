@@ -4,7 +4,6 @@
 // The layers are:
 // media.ts -> satellite.ts -> junction.ts -> file.ts
 
-
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 
@@ -37,6 +36,10 @@ export interface Data {
 /**
  * Creates a standard filename from group, subgroup, date, name, etc.
  * 
+ * Apart from ignoring the difference between 'Season' and 'Series',
+ * it should be possible to recover the same data from the standard filename
+ * as was contained in the original data.
+ * 
  * @param data The data from which to create the filename.
  */
 export function standardFilename(data: Data) {
@@ -64,7 +67,6 @@ export function standardFilename(data: Data) {
         }
     }
 
-
     let date = "";
     if ((data.year !== undefined)) {
         if ((data.month !== undefined) && (data.day !== undefined)) {
@@ -83,7 +85,6 @@ export function standardFilename(data: Data) {
             date += " - ";
         }
     }
-
 
     let numbers = "";
     if (subgroupNumber && data.number) {
@@ -180,7 +181,6 @@ const standardDataExtractors = (function () {
 
     const numberSeparator = alt(separator, grp(period, ws), ws);
     const number_prefix = (capture: keyof Data) => grp(number(capture), numberSeparator);
-
 
     const dd = alt(`[0][123456789]`, `[1][0123456789]`, `[2][0123456789]`, `[3][01]`);
     const mm = alt(`[0][123456789]`, `[1][012]`);
