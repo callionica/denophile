@@ -323,9 +323,16 @@ export function directoryEntries(folderPath: FilePath): AsyncIterable<URL> {
     return generable(_directoryEntries)();
 }
 
+/** The name and extension of a file or folder. */
 export interface FileName {
+    /** The name of a file or folder without the extension. */
     name: string;
-    extension?: string; // Does not start with a dot
+
+    /**
+     * The extension of a file or folder.
+     * Does not start with a dot.
+     */
+    extension?: string;
 }
 
 /** A cache of file extensions */
