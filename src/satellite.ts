@@ -179,6 +179,9 @@ export class Primary {
         return this.children_;
     }
 
+    /**
+     * The folders and primaries that are descendants of this object.
+     */
     descendants(): AsyncIterable<this> {
         // deno-lint-ignore no-this-alias
         const self = this;
