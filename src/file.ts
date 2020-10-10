@@ -42,7 +42,9 @@ export function toFileURL(filePath: FilePath): URL {
         if (filePath.startsWith("file://")) {
             return new URL(filePath);
         } else {
-            return new URL("file://" + filePath);
+            const url = new URL("file://");
+            url.pathname = filePath.split("/").map(encodeURIComponent).join("/");
+            return url;
         }
     }
     return filePath;
@@ -310,7 +312,7 @@ export function directoryEntries(folderPath: FilePath): AsyncIterable<URL> {
 
     async function* _directoryEntries() {
         for await (const child of Deno.readDir(url)) {
-            const childURL = new URL(child.name + (child.isDirectory ? SEPARATOR : ""), url);
+            const childURL = new URL(encodeURIComponent(child.name) + (child.isDirectory ? SEPARATOR : ""), url);
             // TODO Deno.readLink doesn't accept URL
             // TODO Need to determine if target is a directory to ensure terminal slash on URL
             // if (child.isSymlink) {
