@@ -1,8 +1,14 @@
-import { directoryEntries, fileName } from "./file.ts";
+import { directoryEntries, fileName, toFileURL } from "./file.ts";
 import { arrayFrom } from "./utility.ts";
 
 Deno.test("directoryEntries", async function () {
-    const result = await arrayFrom(directoryEntries("/Users/user/Desktop/__current/fs/"));
+    const d = "/Volumes/C430/TV/Would I Lie to You?/";
+    console.log(d);
+
+    const u = toFileURL(d);
+    console.log(u.pathname, u);
+
+    const result = await arrayFrom(directoryEntries(d));
     console.log(result);
 });
 
@@ -17,3 +23,4 @@ Deno.test("name", async function () {
     console.log(fileName("file:///what a space/"));
     console.log(fileName("file:///what%20a space/"));
 });
+
