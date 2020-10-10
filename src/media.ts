@@ -416,8 +416,8 @@ export class MediaPrimary extends Primary {
      * the group or subgroup folder. Otherwise there is no container folder.
      * 
      * You'll only get a container folder if the filename contains a group and it's different
-     * from the name of the parent folder. If the filename doesn't contain a group, the parent
-     * folder defines a group instead of a container.
+     * from the name of the grandparent & parent folders. If the filename doesn't contain a group,
+     * the parent folder defines a group or subgroup instead of a container.
      */
     get containerFolder(): this | undefined {
         const parent = this.parent;
@@ -430,10 +430,12 @@ export class MediaPrimary extends Primary {
     }
 
     /**
-     * The context is the name of the group or of the container.
+     * The context folder is the container folder or the group folder.
+     * 
+     * This is a good candidate for grouping related media together in the UI.
      */
-    get context(): string {
-        return this.info?.group || this.containerFolder?.name || "";
+    get contextFolder(): this | undefined {
+        return this.containerFolder || this.groupFolder;
     }
 
     /**
