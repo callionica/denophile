@@ -395,15 +395,16 @@ export class MediaPrimary extends Primary {
 
     /**
      * The subgroup folder is the parent if it matches the name of the subgroup
-     * and that folder hasn't been identified as the group folder. Otherwise there
+     * and the grandparent folder has been identified as the group folder. Otherwise there
      * is no subgroup folder.
      */
     get subgroupFolder(): this | undefined {
         const subgroup = this.info.subgroup;
         const parent = this.parent;
+        const grandParent = parent?.parent;
 
-        if ((subgroup !== undefined) && (parent !== undefined)) {
-            if ((parent.name === subgroup) && (parent !== this.groupFolder)) {
+        if ((subgroup !== undefined) && (parent !== undefined) && (grandParent !== undefined)) {
+            if ((parent.name === subgroup) && (grandParent === this.groupFolder)) {
                 return parent;
             }
         }
