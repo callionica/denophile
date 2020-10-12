@@ -321,3 +321,36 @@ export function spread<Item, Filler>(
 
     return generable(_spread)();
 }
+
+/**
+ * Sorting in English should ignore leading articles like 'The' and 'An' and
+ * should also recognize numbers within the text so that '2' comes before '10'.
+ * This function takes a natural language string and manipulates it to produce a new string
+ * that can be used for sorting by moving articles to the end of the string
+ * and padding numbers with leading zeroes.
+ * 
+ * @param name The text from which to generate a sortable string
+ */
+export function toSortName(name: string): string {
+    let result = name;
+
+    // Move articles (like 'The' or 'An') to the end of the name
+    const articleRE = /^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des))\s(?<body>.*)$/i;
+    const match = articleRE.exec(name);
+    if (match && match.groups) {
+        const article = match.groups["article"];
+        const body = match.groups["body"];
+        result = `${body} ${article}`;
+    }
+
+    // Pad numbers with leading zeroes so that numeric sorting works
+
+    // deno-lint-ignore no-explicit-any
+    function applyPadding(match: string, prefix: string, number: string, offset: number, original: string, groups: any) {
+        return prefix + number.padStart(6, "0");
+    }
+
+    const numberRE = /(?<prefix>\D)(?<number>\d+)/ig;
+    
+    return result.replace(numberRE, applyPadding);
+}
