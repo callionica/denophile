@@ -6,7 +6,7 @@
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
-import { toSortableName as toSortableName } from "./utility.ts";
+import { toSortableName } from "./utility.ts";
 
 type IMAGE_USE = "backdrop" | "poster";
 
