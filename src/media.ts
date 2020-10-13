@@ -6,7 +6,7 @@
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
-import { toSortName } from "./utility.ts";
+import { toSortableName as toSortableName } from "./utility.ts";
 
 type IMAGE_USE = "backdrop" | "poster";
 
@@ -283,13 +283,13 @@ const standardDataExtractors = (function () {
 export class MediaPrimary extends Primary {
     info_?: Data;
     standardName_?: string;
-    sortName_?: string;
+    sortableName_?: string;
 
     refresh() {
         super.refresh();
         this.info_ = undefined;
         this.standardName_ = undefined;
-        this.sortName_ = undefined;
+        this.sortableName_ = undefined;
     }
 
     isPrimary(entry: Entry): boolean {
@@ -454,12 +454,12 @@ export class MediaPrimary extends Primary {
     }
 
     /** The sortable name */
-    get sortName() : string {
-        if (this.sortName_ === undefined) {
-            this.sortName_ = toSortName(this.standardName);    
+    get sortableName() : string {
+        if (this.sortableName_ === undefined) {
+            this.sortableName_ = toSortableName(this.standardName);    
         }
         
-        return this.sortName_;
+        return this.sortableName_;
     }
 
     /**

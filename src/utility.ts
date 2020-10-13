@@ -331,7 +331,7 @@ export function spread<Item, Filler>(
  * 
  * @param name The text from which to generate a sortable string
  */
-export function toSortName(name: string): string {
+export function toSortableName(name: string): string {
     let result = name;
 
     // Move articles (like 'The' or 'An') to the end of the name
