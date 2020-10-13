@@ -523,3 +523,71 @@ export class MediaPrimary extends Primary {
         return [];
     }
 }
+
+export type MediaGroup = {
+    name: string,
+    sortableName: string,
+    folder: MediaPrimary,
+    isSubgroup: boolean,
+    files: MediaPrimary[]
+};
+
+export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] {
+    const groups: MediaGroup[] = [];
+
+    for (const primary of primaries) {
+        if (primary.isFolder) {
+            continue;
+        }
+
+        const found = groups.find(group => group.folder === primary.contextFolder);
+        if (found) {
+            found.files.push(primary);
+            if (primary.contextFolder === primary.subgroupFolder) {
+                found.isSubgroup = true;
+            }
+        } else {
+            const group = {
+                name: "",
+                sortableName: "",
+                folder: primary.contextFolder!,
+                isSubgroup: (primary.contextFolder === primary.subgroupFolder),
+                files: [primary],
+            };
+            groups.push(group);
+        }
+    }
+
+    for (const group of groups) {
+        if (group.isSubgroup) {
+            group.name = group.folder.parent!.name + " - " + group.folder.name;
+        } else {
+            group.name = group.folder.name;
+        }
+
+        group.sortableName = toSortableName(group.name);
+
+        group.files.sort((a, b) => {
+
+            // A 'grouped' item goes before a 'contained' item
+            if ((a.containerFolder === undefined) && (b.containerFolder !== undefined)) {
+                return -1;
+            }
+
+            if ((a.containerFolder !== undefined) && (b.containerFolder === undefined)) {
+                return 1;
+            }
+
+            // PERF: Could do property-level sorting, but this is probably OK
+
+            // Otherwise compare the standard name (in its sortable form)
+            return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
+        });
+    }
+
+    groups.sort((a, b) => {
+        return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
+    });
+
+    return groups;
+}
