@@ -589,6 +589,9 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
             return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
         });
 
+        // We will use the list of subgroups to determine whether to display the subgroup
+        // when we display the list of files, so it's important to preserve 'no subgroup'
+        // in the output. Here, we represent no subgroup as an empty string.
         group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
     }
 
