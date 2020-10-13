@@ -527,9 +527,12 @@ export class MediaPrimary extends Primary {
 export type MediaGroup = {
     name: string,
     sortableName: string,
+
+    files: MediaPrimary[],
+
     folder: MediaPrimary,
     isSubgroup: boolean,
-    files: MediaPrimary[],
+
     subgroups: string[],
 };
 
@@ -586,7 +589,7 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
             return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
         });
 
-        group.subgroups = [...new Set(group.files.filter(file => file.info.subgroup !== undefined).map(file => file.info.subgroup))] as string[];
+        group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
     }
 
     groups.sort((a, b) => {
