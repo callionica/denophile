@@ -445,20 +445,20 @@ export class MediaPrimary extends Primary {
     }
 
     /** The standard name */
-    get standardName() : string {
+    get standardName(): string {
         if (this.standardName_ === undefined) {
-            this.standardName_ = standardFilename(this.info);    
+            this.standardName_ = standardFilename(this.info);
         }
-        
+
         return this.standardName_;
     }
 
     /** The sortable name */
-    get sortableName() : string {
+    get sortableName(): string {
         if (this.sortableName_ === undefined) {
-            this.sortableName_ = toSortableName(this.standardName);    
+            this.sortableName_ = toSortableName(this.standardName);
         }
-        
+
         return this.sortableName_;
     }
 
@@ -529,7 +529,8 @@ export type MediaGroup = {
     sortableName: string,
     folder: MediaPrimary,
     isSubgroup: boolean,
-    files: MediaPrimary[]
+    files: MediaPrimary[],
+    subgroups: string[],
 };
 
 export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] {
@@ -553,6 +554,7 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
                 folder: primary.contextFolder!,
                 isSubgroup: (primary.contextFolder === primary.subgroupFolder),
                 files: [primary],
+                subgroups: [],
             };
             groups.push(group);
         }
@@ -583,6 +585,8 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
             // Otherwise compare the standard name (in its sortable form)
             return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
         });
+
+        group.subgroups = [...new Set(group.files.filter(file => file.info.subgroup !== undefined).map(file => file.info.subgroup))] as string[];
     }
 
     groups.sort((a, b) => {
