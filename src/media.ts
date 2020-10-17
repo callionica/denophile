@@ -504,43 +504,27 @@ export class MediaPrimary extends Primary {
             return (await primary.satellites()).filter(match);
         };
 
-        // Look for matching satellites of this object.
-        for (const primary of [this]) {
-            if (primary !== undefined) {
-                const satellites = await getSatellites(primary);
+        // Look for matching satellites on this object.
+        if (this !== undefined) {
+            const satellites = await getSatellites(this);
 
-                if (satellites.length > 0) {
-                    return satellites;
-                }
+            if (satellites.length > 0) {
+                return satellites;
             }
         }
 
-        // If none, look on the subgroup folder.
-        for (const primary of [this.subgroupFolder]) {
-            if (primary !== undefined) {
-                const satellites = await getSatellites(primary);
+        // If no satellites, look on the subgroup folder.
+        if (this.subgroupFolder !== undefined) {
+            const satellites = await this.subgroupFolder.findSatellites(extensions);
 
-                if (satellites.length > 0) {
-                    return satellites;
-                }
+            if (satellites.length > 0) {
+                return satellites;
             }
         }
 
-        // If no satellites, look for subgroup-tagged satellites on the group folder.
-        // If none, return any matching satellites on the group folder.
-        const primary = this.groupFolder;
-        if (primary !== undefined) {
-            const satellites = await getSatellites(primary);
-
-            const subgroup = this.info.subgroup;
-            if (subgroup !== undefined) {
-                const subgroupSatellites = satellites.filter(s => s.tags.includes(subgroup));
-                if (subgroupSatellites.length > 0) {
-                    return subgroupSatellites;
-                }
-            }
-
-            // No subgroup-tagged satellites, so return group satellites
+        // If no satellites, look on the group folder.
+        if (this.groupFolder !== undefined) {
+            const satellites = await this.groupFolder.findSatellites(extensions);
             if (satellites.length > 0) {
                 return satellites;
             }
@@ -549,7 +533,7 @@ export class MediaPrimary extends Primary {
         // No satellites on the item, the subgroup, or the group so
         // time to check the container folder for satellites.
         if (this.containerFolder !== undefined) {
-            const satellites = await getSatellites(this.containerFolder);
+            const satellites = await this.containerFolder.findSatellites(extensions);
 
             if (satellites.length > 0) {
                 return satellites;
