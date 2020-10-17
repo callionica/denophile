@@ -485,7 +485,6 @@ for (let i = 0; i < diacritics.length; ++i) {
 function removeDiacritics(text: string) {
     // deno-lint-ignore no-control-regex
     return text.replace(/[^\u0000-\u007E]/g, function (letter: string) {
-        console.log("letter", letter, diacriticsMap[letter]);
         return diacriticsMap[letter] || letter;
     });
 }    
