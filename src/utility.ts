@@ -375,7 +375,7 @@ export function toURLName(name: string): string {
 
     // Remove punctuation except dashes & periods
     c1 = c1.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\/:;<=>?@\[\]^_`{|}~]/g, "");
-    
+
     // Collapse to english 26 and digits by replacing with dashes
     c1 = c1.replace(/[^a-z0-9]/g, "-");
 

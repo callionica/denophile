@@ -6,7 +6,7 @@
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
-import { toSortableName } from "./utility.ts";
+import { toSortableName, toURLName } from "./utility.ts";
 
 type IMAGE_USE = "backdrop" | "poster";
 
@@ -284,12 +284,14 @@ export class MediaPrimary extends Primary {
     info_?: Data;
     standardName_?: string;
     sortableName_?: string;
+    urlName_?: string;
 
     refresh() {
         super.refresh();
         this.info_ = undefined;
         this.standardName_ = undefined;
         this.sortableName_ = undefined;
+        this.urlName_ = undefined;
     }
 
     isPrimary(entry: Entry): boolean {
@@ -301,6 +303,11 @@ export class MediaPrimary extends Primary {
     }
 
     get info(): Data {
+        // We don't parse folder names
+        if (this.isFolder) {
+            return {};
+        }
+
         if (this.info_ !== undefined) {
             return this.info_;
         }
@@ -462,15 +469,25 @@ export class MediaPrimary extends Primary {
         return this.sortableName_;
     }
 
+    /** The URL name */
+    get urlName(): string {
+        if (this.urlName_ === undefined) {
+            this.urlName_ = toURLName(this.standardName);
+        }
+
+        return this.urlName_;
+    }
+
     /**
      * Searches for matching satellites starting at the current primary and then
-     * through ancestor primaries if no match is found at a lower level.
+     * through subgroup, subgroup-tagged group, group, and container primaries
+     * if no match is found at a lower level.
      * 
      * NOTE: RETURNS ONLY THE FIRST LEVEL OF SATELLITES
      * 
      * This is useful for images or text descriptions, where you'd like 
      * the specific result for the episode of a TV show, but if none is found, you'd accept
-     * a match for the season or the show.
+     * a match for the season or the show or the container.
      * 
      * Note that subgroup-related satellites can be found in two ways:
      * 1. As a satellite of the subgroup folder
@@ -478,7 +495,7 @@ export class MediaPrimary extends Primary {
      * 
      * @param extensions Array of extensions to match
      */
-    async findSatellites(extensions: string[]): Promise<Satellite<this>[]> {
+    async findSatellitesLikeFile(extensions: string[]): Promise<Satellite<this>[]> {
 
         const getSatellites = async (primary: this) => {
             const match = (s: Satellite<this>) => {
@@ -488,8 +505,18 @@ export class MediaPrimary extends Primary {
         };
 
         // Look for matching satellites of this object.
+        for (const primary of [this]) {
+            if (primary !== undefined) {
+                const satellites = await getSatellites(primary);
+
+                if (satellites.length > 0) {
+                    return satellites;
+                }
+            }
+        }
+
         // If none, look on the subgroup folder.
-        for (const primary of [this, this.subgroupFolder]) {
+        for (const primary of [this.subgroupFolder]) {
             if (primary !== undefined) {
                 const satellites = await getSatellites(primary);
 
@@ -519,14 +546,73 @@ export class MediaPrimary extends Primary {
             }
         }
 
+        // No satellites on the item, the subgroup, or the group so
+        // time to check the container folder for satellites.
+        if (this.containerFolder !== undefined) {
+            const satellites = await getSatellites(this.containerFolder);
+
+            if (satellites.length > 0) {
+                return satellites;
+            }
+        }
+
         // Otherwise, return an empty array
         return [];
+    }
+
+    async findSatellitesLikeFolder(extensions: string[]): Promise<Satellite<this>[]> {
+
+        const name = this.name;
+        const parent = this.parent!;
+
+        const getSatellites = async (primary: this) => {
+            const match = (s: Satellite<this>) => {
+                return s.extension && extensions.includes(s.extension.toLowerCase());
+            };
+            return (await primary.satellites()).filter(match);
+        };
+
+        // Look for satellites on this folder.
+        for (const primary of [this]) {
+            if (primary !== undefined) {
+                const satellites = await getSatellites(primary);
+
+                if (satellites.length > 0) {
+                    return satellites;
+                }
+            }
+        }
+
+        // If no satellites, look for tagged satellites on the parent folder.
+        for (const primary of [parent]) {
+            if (primary !== undefined) {
+                const satellites = await getSatellites(primary);
+
+                if (name !== undefined) {
+                    const subgroupSatellites = satellites.filter(s => s.tags.includes(name));
+                    if (subgroupSatellites.length > 0) {
+                        return subgroupSatellites;
+                    }
+                }
+            }
+        }
+
+        // Otherwise, return an empty array
+        return [];
+    }
+
+    async findSatellites(extensions: string[]): Promise<Satellite<this>[]> {
+        if (this.isFolder) {
+            return this.findSatellitesLikeFolder(extensions);
+        }
+        return this.findSatellitesLikeFile(extensions);
     }
 }
 
 export type MediaGroup = {
     name: string,
     sortableName: string,
+    urlName: string,
 
     files: MediaPrimary[],
 
@@ -534,9 +620,10 @@ export type MediaGroup = {
     isSubgroup: boolean,
 
     subgroups: string[],
+    images: Satellite<MediaPrimary>[],
 };
 
-export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] {
+export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise<MediaGroup[]> {
     const groups: MediaGroup[] = [];
 
     for (const primary of primaries) {
@@ -554,10 +641,12 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
             const group = {
                 name: "",
                 sortableName: "",
+                urlName: "",
                 folder: primary.contextFolder!,
                 isSubgroup: (primary.contextFolder === primary.subgroupFolder),
                 files: [primary],
                 subgroups: [],
+                images: [],
             };
             groups.push(group);
         }
@@ -571,6 +660,7 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
         }
 
         group.sortableName = toSortableName(group.name);
+        group.urlName = toURLName(group.name);
 
         group.files.sort((a, b) => {
 
@@ -593,6 +683,8 @@ export function getMediaGroups(primaries: Iterable<MediaPrimary>): MediaGroup[] 
         // when we display the list of files, so it's important to preserve 'no subgroup'
         // in the output. Here, we represent no subgroup as an empty string.
         group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
+
+        group.images = await group.folder.findSatellites(IMAGE_EXTENSIONS);
     }
 
     groups.sort((a, b) => {
