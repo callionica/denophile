@@ -334,9 +334,22 @@ export function spread<Item, Filler>(
 export function toSortableName(name: string): string {
     let result = name;
 
+    // Remove diacritics
+    result = removeDiacritics(result);
+
+    // Remove some punctuation
+    result = result.replace(/['`]/g, "");
+
+    // Replace punctuation except dashes & periods
+    result = result.replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\/:;<=>?@\[\]^_`{|}~]/g, " ");
+
+    // Clean up spaces
+    result = result.trim();
+    result = result.replace(/ {2,}/g, " ");
+
     // Move articles (like 'The' or 'An') to the end of the name
     const articleRE = /^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des))\s(?<body>.*)$/i;
-    const match = articleRE.exec(name);
+    const match = articleRE.exec(result);
     if (match && match.groups) {
         const article = match.groups["article"];
         const body = match.groups["body"];
@@ -350,7 +363,7 @@ export function toSortableName(name: string): string {
         return prefix + number.padStart(6, "0");
     }
 
-    const numberRE = /(?<prefix>\D)(?<number>\d+)/ig;
+    const numberRE = /(?<prefix>^|\D)(?<number>\d+)/ig;
 
     return result.replace(numberRE, applyPadding);
 }
@@ -370,8 +383,11 @@ export function toURLName(name: string): string {
     // Convert ampersand to and
     c1 = c1.replace(/ & /g, " and ");
 
+    // Convert underscore to space
+    c1 = c1.replace(/_/g, " ");
+
     // TODO - normalize currently not enabled in Deno
-    
+
     // Remove diacritics
     // c1 = c1.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
