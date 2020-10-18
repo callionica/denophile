@@ -651,7 +651,7 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
 
     for (const group of groups) {
         if (group.isSubgroup) {
-            group.name = group.folder.parent!.name + " - " + group.folder.name;
+            group.name = group.folder.parent!.name + " " + group.folder.name;
         } else {
             group.name = group.folder.name;
         }
