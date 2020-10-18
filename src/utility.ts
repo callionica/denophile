@@ -367,10 +367,15 @@ export function toURLName(name: string): string {
     c1 = c1.replace(/ø|ö|œ/g, "oe");
     c1 = c1.replace(/æ/g, "ae");
 
-    // Remove diacritics
-    c1 = c1.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // Convert ampersand to and
+    c1 = c1.replace(/ & /g, " and ");
 
-    // TODO - don't need this when normalize works
+    // TODO - normalize currently not enabled in Deno
+    
+    // Remove diacritics
+    // c1 = c1.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // Remove diacritics
     c1 = removeDiacritics(c1);
 
     // Remove punctuation except dashes & periods
