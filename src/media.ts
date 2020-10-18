@@ -479,7 +479,7 @@ export class MediaPrimary extends Primary {
     }
 
     /**
-     * Searches for matching satellites starting at the current primary and then
+     * Searches for matching satellites starting at the current item and then
      * through subgroup, subgroup-tagged group, group, and container primaries
      * if no match is found at a lower level.
      * 
@@ -544,6 +544,13 @@ export class MediaPrimary extends Primary {
         return [];
     }
 
+    /**
+     * Searches for matching satellites starting at the current item and then
+     * through satellites of the parent that have a tag that matches the name of
+     * this item, if no match is found at a lower level.
+     * 
+     * @param extensions Array of extensions to match
+     */
     async findSatellitesLikeFolder(extensions: string[]): Promise<Satellite<this>[]> {
 
         const name = this.name;
@@ -607,6 +614,12 @@ export type MediaGroup = {
     images: Satellite<MediaPrimary>[],
 };
 
+/**
+ * Groups together media files based on their contextFolder
+ * and sorts the files within each group based on their sortableName.
+ * 
+ * @param primaries The files to group
+ */
 export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise<MediaGroup[]> {
     const groups: MediaGroup[] = [];
 
