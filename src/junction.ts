@@ -71,7 +71,7 @@ async function loadJunction(url: URL): Promise<URL[]> {
  * @param filePath The location of the file
  */
 export async function loadEntry(filePath: FilePath): Promise<Entry> {
-    let url = toFileURL(filePath);
+    const url = toFileURL(filePath);
 
     let name = fileName(url);
 

@@ -312,7 +312,7 @@ export class MediaPrimary extends Primary {
             return this.info_;
         }
 
-        let result = parseData(this.name, standardDataExtractors);
+        const result = parseData(this.name, standardDataExtractors);
 
         function cleanup(text: string) {
             text = text.replace(/[_\s]+/g, " ");
