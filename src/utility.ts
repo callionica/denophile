@@ -326,8 +326,8 @@ export function spread<Item, Filler>(
  * Sorting in English should ignore leading articles like 'The' and 'An' and
  * should also recognize numbers within the text so that '2' comes before '10'.
  * This function takes a natural language string and manipulates it to produce a new string
- * that can be used for sorting by moving articles to the end of the string
- * and padding numbers with leading zeroes.
+ * that can be used for English sorting by moving articles to the end of the string,
+ * padding numbers with leading zeroes, and removing/replacing diacritics and symbols.
  * 
  * @param name The text from which to generate a sortable string
  */
@@ -376,7 +376,13 @@ export function toSortableName(name: string): string {
 
     const numberRE = /(?<prefix>^|[^0123456789.])(?<number>\d+)/ig;
 
-    return result.replace(numberRE, applyPadding);
+    result = result.replace(numberRE, applyPadding);
+
+    // lowercase - keeping the case of the first letter for disambiguation
+    const initial = result[0];
+    result = result.toLowerCase() + ` ${initial}`;
+
+    return result;
 }
 
 /** Returns a string suitable for use in a URL */
