@@ -268,7 +268,7 @@ export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMa
  * @param iterable The list of values to be spread out
  * @param iterableLength The current number of values in the list
  * @param newLength The desired length of the new list
- * @param filler The value used to spread out the list to the desired length
+ * @param fillValue The value used to spread out the list to the desired length
  */
 export function spread<Item, Filler>(
     iterable: AnyIterable<Item>,
@@ -334,6 +334,17 @@ export function spread<Item, Filler>(
 export function toSortableName(name: string): string {
     let result = name;
 
+    // Convert northern european letters
+    result = result.replace(/Å/g, "Aa");
+    result = result.replace(/Ø|Ö|Œ/g, "Oe");
+    result = result.replace(/Æ/g, "Ae");
+    result = result.replace(/å/g, "aa");
+    result = result.replace(/ø|ö|œ/g, "oe");
+    result = result.replace(/æ/g, "ae");
+
+    // Convert ampersand to and
+    result = result.replace(/ & /g, " and ");
+
     // Remove diacritics
     result = removeDiacritics(result);
 
@@ -363,7 +374,7 @@ export function toSortableName(name: string): string {
         return prefix + number.padStart(6, "0");
     }
 
-    const numberRE = /(?<prefix>^|\D)(?<number>\d+)/ig;
+    const numberRE = /(?<prefix>^|[^0123456789.])(?<number>\d+)/ig;
 
     return result.replace(numberRE, applyPadding);
 }
