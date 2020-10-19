@@ -408,11 +408,6 @@ export function toURLName(name: string): string {
     // Convert underscore to space
     c1 = c1.replace(/_/g, " ");
 
-    // TODO - normalize currently not enabled in Deno
-
-    // Remove diacritics
-    // c1 = c1.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
     // Remove diacritics
     c1 = removeDiacritics(c1);
 
