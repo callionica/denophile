@@ -334,6 +334,9 @@ export function spread<Item, Filler>(
 export function toSortableName(name: string): string {
     let result = name;
 
+    // Get the first uncommon character for later disambiguation
+    const symbol = /[^a-zA-Z0-9 '\-]/.exec(name) || "";
+
     // Convert northern european letters
     result = result.replace(/Å/g, "Aa");
     result = result.replace(/Ø|Ö|Œ/g, "Oe");
@@ -367,6 +370,9 @@ export function toSortableName(name: string): string {
         result = `${body} ${article}`;
     }
 
+    // Get the first letter for later disambiguation
+    const initial = result[0] || "";
+
     // Pad numbers with leading zeroes so that numeric sorting works
 
     // deno-lint-ignore no-explicit-any
@@ -378,9 +384,8 @@ export function toSortableName(name: string): string {
 
     result = result.replace(numberRE, applyPadding);
 
-    // lowercase - keeping the case of the first letter for disambiguation
-    const initial = result[0];
-    result = result.toLowerCase() + ` ${initial}`;
+    // lowercase - keeping extra info for disambiguation
+    result = result.toLowerCase() + ` ${initial}${symbol}`;
 
     return result;
 }
