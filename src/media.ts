@@ -604,6 +604,7 @@ export type MediaGroup = {
     name: string,
     sortableName: string,
     urlName: string,
+    images: Satellite<MediaPrimary>[],
 
     files: MediaPrimary[],
 
@@ -611,7 +612,6 @@ export type MediaGroup = {
     isSubgroup: boolean,
 
     subgroups: string[],
-    images: Satellite<MediaPrimary>[],
 };
 
 /**
@@ -639,11 +639,11 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
                 name: "",
                 sortableName: "",
                 urlName: "",
+                images: [],
                 folder: primary.contextFolder!,
                 isSubgroup: (primary.contextFolder === primary.subgroupFolder),
                 files: [primary],
                 subgroups: [],
-                images: [],
             };
             groups.push(group);
         }
