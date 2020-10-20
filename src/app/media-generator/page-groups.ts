@@ -3,10 +3,10 @@ import { MediaGroup } from "../../media.ts";
 export function pageGroups(mediaGroups: MediaGroup[]) {
     const title = "Media";
 
-    type ArticleBody = { article: string | undefined, body: string };
-    function name(mediaGroup: MediaGroup): ArticleBody {
+    type FancyName = { article: string | undefined, body: string };
+    function name(mediaGroup: MediaGroup): FancyName {
         const name = mediaGroup.name.replace("--", "-");
-        const result: ArticleBody = { article: undefined, body: name };
+        const result: FancyName = { article: undefined, body: name };
 
         const articleRE = /^(?<article>(the)|(an?)|(l[aeo]s?)|(un[ae]?)|(un[ao]s)|(des))\s(?<body>.*)$/i;
         const match = articleRE.exec(name);
@@ -20,9 +20,9 @@ export function pageGroups(mediaGroups: MediaGroup[]) {
     }
 
     const groups = mediaGroups.map(mediaGroup => {
-        const n = name(mediaGroup);
-        const article = (n.article !== undefined) ? `<span class="article">${n.article} </span>` : "";
-        return `<div><a href="${mediaGroup.urlName + "/index.html"}">${article}${n.body}</a></div>`;
+        const fancyName = name(mediaGroup);
+        const article = (fancyName.article !== undefined) ? `<span class="article">${fancyName.article} </span>` : "";
+        return `<div><a href="${mediaGroup.urlName + "/index.html"}">${article}${fancyName.body}</a></div>`;
     }).join("\n");
 
     const html =
