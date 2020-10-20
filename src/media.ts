@@ -6,13 +6,14 @@
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
-import { toSortableName, toURLName, first } from "./utility.ts";
+import { toSortableName, toURLName, first, generable } from "./utility.ts";
 
 type IMAGE_USE = "backdrop" | "poster";
 
 export const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
 export const SUBTITLE_EXTENSIONS = ["vtt", "webvtt", "ttml", "srt"];
 export const TEXT_EXTENSIONS = ["txt"];
+export const AUDIO_EXTENSIONS = ["m4a"];
 export const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
 
 export interface Data {
@@ -361,8 +362,16 @@ export class MediaPrimary extends Primary {
             }
         }
 
+        function generatedName(file: MediaPrimary) {
+            const number = result.number;
+            if (number) {
+                const thing = ((file.extension !== undefined) && AUDIO_EXTENSIONS.includes(file.extension)) ? "Track" : "Episode";
+                return `${thing} ${number}`;
+            }
+        }
+
         if (result.name === undefined) {
-            result.name = this.name;
+            result.name = generatedName(this) || this.name;
         }
 
         if (result.name !== undefined) {
@@ -604,6 +613,9 @@ export type MediaGroup = {
     name: string,
     sortableName: string,
     urlName: string,
+
+    group: string,
+
     images: Satellite<MediaPrimary>[],
     imagesFromFirstFile: Satellite<MediaPrimary>[],
 
@@ -640,6 +652,7 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
                 name: "",
                 sortableName: "",
                 urlName: "",
+                group: "",
                 images: [],
                 imagesFromFirstFile: [],
                 folder: primary.contextFolder!,
@@ -653,9 +666,11 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
 
     for (const group of groups) {
         if (group.isSubgroup) {
-            group.name = group.folder.parent!.name + " - " + group.folder.name;
+            group.group = group.folder.parent!.name;
+            group.name = group.group + " - " + group.folder.name;
         } else {
-            group.name = group.folder.name;
+            group.group = group.folder.name; 
+            group.name = group.group;
         }
 
         group.sortableName = toSortableName(group.name);
@@ -683,9 +698,10 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
         // in the output. Here, we represent no subgroup as an empty string.
         group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
 
+        // Get the images associated with this folder 
         group.images = await group.folder.findSatellites(IMAGE_EXTENSIONS);
 
-        
+        // Get the first set of images from a file
         const fileImages = await first(group.files, async (file) => {
             const images = await file.findSatellites(IMAGE_EXTENSIONS);
             if (images.length > 0) {
