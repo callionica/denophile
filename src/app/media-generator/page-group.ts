@@ -2,7 +2,7 @@ import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "..
 
 export function pageGroup(mediaGroup: MediaGroup) {
 	const title = mediaGroup.name.replace("--", "-");
-	const displaySubgroup = mediaGroup.subgroups.length > 1;
+	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", undefined].includes(mediaGroup.files[0].info.subgroupNumber));
 
 	const hideSeason = displaySubgroup ? "" : "data-hide-season";
 
