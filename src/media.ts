@@ -13,8 +13,9 @@ type IMAGE_USE = "backdrop" | "poster";
 export const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
 export const SUBTITLE_EXTENSIONS = ["vtt", "webvtt", "ttml", "srt"];
 export const TEXT_EXTENSIONS = ["txt"];
-export const AUDIO_EXTENSIONS = ["m4a"];
-export const MEDIA_EXTENSIONS = ["m4a", "m4v", "mp4", "ts"];
+export const AUDIO_EXTENSIONS = ["m4a", "mp3"];
+export const VIDEO_EXTENSIONS = ["m4v", "mp4", "ts"];
+export const MEDIA_EXTENSIONS = [...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS];
 
 export interface Data {
     name?: string; // Track name, Episode name
@@ -178,7 +179,7 @@ const standardDataExtractors = (function () {
     const track = alt(`Track`);
 
     const digits = (count: number) => `(?:\\d{${count}})`;
-    const phrase = `(?:.{0,64}\\S)`;
+    const phrase = `(?:.{0,128}\\S)`;
     const number = (capture: keyof Data) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
 
     const numberSeparator = alt(separator, grp(period, ws), ws);
