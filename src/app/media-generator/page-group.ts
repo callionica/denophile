@@ -2,10 +2,12 @@ import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "..
 
 export function pageGroup(mediaGroup: MediaGroup) {
 
+	// The subgroup number or the year
 	function fileDisplaySubgroupNumber(file: MediaPrimary) {
 		return file.info.subgroupNumber || file.info.year || "";
 	}
 
+	// The number or a number based on month and day
 	function fileDisplayNumber(file: MediaPrimary) {
 		function numberFromDate(file: MediaPrimary) {
 			if ((file.info.month !== undefined) && (file.info.day !== undefined)) {
@@ -16,6 +18,7 @@ export function pageGroup(mediaGroup: MediaGroup) {
 		return file.info.number || numberFromDate(file) || ""
 	}
 
+	// The name including the group if it differs from the media group
 	function fileDisplayName(file: MediaPrimary) {
 		console.log(file.info);
 		const group = (file.info.group === mediaGroup.group) ? "" : file.info.group;
