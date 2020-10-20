@@ -217,7 +217,10 @@ const standardDataExtractors = (function () {
 
     const subgroup = alt(grp(alt(season, chapter), ws, number("numberFromSubgroupName")), phrase);
     const name = alt(
-        grp(alt(episode, track, chapter), ws, number("numberFromName")),
+        grp(
+            alt(episode, track, chapter), ws, number("numberFromName"),
+            opt(period, ws, phrase)
+        ),
         grp(cap("datelessName")(phrase), ws, leftParen, yearOrDate, rightParen),
         phrase
     );
@@ -670,7 +673,7 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
             group.group = group.folder.parent!.name;
             group.name = group.group + " - " + group.folder.name;
         } else {
-            group.group = group.folder.name; 
+            group.group = group.folder.name;
             group.name = group.group;
         }
 
