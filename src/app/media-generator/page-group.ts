@@ -1,12 +1,12 @@
 import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
 
 export function pageGroup(mediaGroup: MediaGroup) {
-    const title = mediaGroup.name.replace("--", "-");
-    const displaySubgroup = mediaGroup.subgroups.length > 1;
+	const title = mediaGroup.name.replace("--", "-");
+	const displaySubgroup = mediaGroup.subgroups.length > 1;
 
-    const hideSeason = displaySubgroup ? "" : "data-hide-season";
+	const hideSeason = displaySubgroup ? "" : "data-hide-season";
 
-    const poster = mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0] || "folder.jpg"; // TODO
+	const poster = mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0] || "folder.jpg"; // TODO
 
 	function fileDisplayName(file: MediaPrimary) {
 		console.log(file.info);
@@ -15,13 +15,20 @@ export function pageGroup(mediaGroup: MediaGroup) {
 		return `${group ? group + " - " : ""}${name}`.replace("--", "-");
 	}
 
-    const media = mediaGroup.files.map(file => {
-		return `<a href="${file.urlName}/index.html"><span class="season">${file.info.subgroupNumber || ""}</span><span class="episode">${file.info.number || ""}</span><span class="name">${fileDisplayName(file)}</span></a>`;
-		
+	const media = mediaGroup.files.map(file => {
+
+		function numberFromDate(file: MediaPrimary) {
+			if ((file.info.month !== undefined) && (file.info.day !== undefined)) {
+				return `${file.info.month.padStart(2, "0")}${file.info.day.padStart(2, "0")}`;
+			}
+		}
+
+		return `<a href="${file.urlName}/index.html"><span class="season">${file.info.subgroupNumber || file.info.year || ""}</span><span class="episode">${file.info.number || numberFromDate(file) || ""}</span><span class="name">${fileDisplayName(file)}</span></a>`;
+
 	}).join("\n");
 
-    const html = 
-	`<html>
+	const html =
+		`<html>
 	<head>
 	<title>${title}</title>
 	<link rel="stylesheet" type="text/css" href="../styles.css">
@@ -35,6 +42,6 @@ export function pageGroup(mediaGroup: MediaGroup) {
 	</div>
 	</body>
     </html>`;
-    
-    return html;
+
+	return html;
 }
