@@ -35,9 +35,6 @@ export function pageGroup(mediaGroup: MediaGroup) {
 
 
 	const media = mediaGroup.files.map(file => {
-
-		
-
 		return `<a href="${file.urlName}/index.html"><span class="season">${fileDisplaySubgroupNumber(file)}</span><span class="episode">${fileDisplayNumber(file)}</span><span class="name">${fileDisplayName(file)}</span></a>`;
 
 	}).join("\n");
