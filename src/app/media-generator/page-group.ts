@@ -1,6 +1,6 @@
 import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
 
-export async function pageGroup(mediaGroup: MediaGroup) {
+export function pageGroup(mediaGroup: MediaGroup) {
     const title = mediaGroup.name.replace("--", "-");
     const displaySubgroup = mediaGroup.subgroups.length > 1;
 
