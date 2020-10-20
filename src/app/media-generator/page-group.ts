@@ -2,8 +2,18 @@ import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "..
 
 export function pageGroup(mediaGroup: MediaGroup) {
 
-	function fileDisplaySubgroup(file: MediaPrimary) {
+	function fileDisplaySubgroupNumber(file: MediaPrimary) {
 		return file.info.subgroupNumber || file.info.year || "";
+	}
+
+	function fileDisplayNumber(file: MediaPrimary) {
+		function numberFromDate(file: MediaPrimary) {
+			if ((file.info.month !== undefined) && (file.info.day !== undefined)) {
+				return `${file.info.month.padStart(2, "0")}${file.info.day.padStart(2, "0")}`;
+			}
+		}
+
+		return file.info.number || numberFromDate(file) || ""
 	}
 
 	function fileDisplayName(file: MediaPrimary) {
@@ -14,22 +24,18 @@ export function pageGroup(mediaGroup: MediaGroup) {
 	}
 
 	const title = mediaGroup.name.replace("--", "-");
-	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", ""].includes(fileDisplaySubgroup(mediaGroup.files[0])));
+	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", ""].includes(fileDisplaySubgroupNumber(mediaGroup.files[0])));
 
 	const hideSeason = displaySubgroup ? "" : "data-hide-season";
 
-	const poster = mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0] || "folder.jpg"; // TODO
+	const poster = (mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0])?.target.toString() || "folder.jpg"; // TODO
 
 
 	const media = mediaGroup.files.map(file => {
 
-		function numberFromDate(file: MediaPrimary) {
-			if ((file.info.month !== undefined) && (file.info.day !== undefined)) {
-				return `${file.info.month.padStart(2, "0")}${file.info.day.padStart(2, "0")}`;
-			}
-		}
+		
 
-		return `<a href="${file.urlName}/index.html"><span class="season">${fileDisplaySubgroup(file)}</span><span class="episode">${file.info.number || numberFromDate(file) || ""}</span><span class="name">${fileDisplayName(file)}</span></a>`;
+		return `<a href="${file.urlName}/index.html"><span class="season">${fileDisplaySubgroupNumber(file)}</span><span class="episode">${fileDisplayNumber(file)}</span><span class="name">${fileDisplayName(file)}</span></a>`;
 
 	}).join("\n");
 
@@ -42,7 +48,7 @@ export function pageGroup(mediaGroup: MediaGroup) {
 	</head>
 	<body data-page="group" ${hideSeason}>
 	<h1>${title}</h1>
-	<div id="sidebar"><img src="${poster.entry.targets[0]}"></div>
+	<div id="sidebar"><img src="${poster}"></div>
 	<div id="content">
 	${media}
 	</div>
