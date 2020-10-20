@@ -49,6 +49,10 @@ export class Satellite<T extends Primary> {
         return this.entry.extension;
     }
 
+    get target(): URL {
+        return this.entry.targets[0];
+    }
+
     get isFolder(): boolean {
         return this.entry.isFolder;
     }
