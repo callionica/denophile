@@ -6,7 +6,7 @@
 
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
-import { toSortableName, toURLName } from "./utility.ts";
+import { toSortableName, toURLName, first } from "./utility.ts";
 
 type IMAGE_USE = "backdrop" | "poster";
 
@@ -605,6 +605,7 @@ export type MediaGroup = {
     sortableName: string,
     urlName: string,
     images: Satellite<MediaPrimary>[],
+    imagesFromFirstFile: Satellite<MediaPrimary>[],
 
     files: MediaPrimary[],
 
@@ -640,6 +641,7 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
                 sortableName: "",
                 urlName: "",
                 images: [],
+                imagesFromFirstFile: [],
                 folder: primary.contextFolder!,
                 isSubgroup: (primary.contextFolder === primary.subgroupFolder),
                 files: [primary],
@@ -682,6 +684,16 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
         group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
 
         group.images = await group.folder.findSatellites(IMAGE_EXTENSIONS);
+
+        
+        const fileImages = await first(group.files, async (file) => {
+            const images = await file.findSatellites(IMAGE_EXTENSIONS);
+            if (images.length > 0) {
+                return images;
+            }
+        });
+
+        group.imagesFromFirstFile = fileImages || [];
     }
 
     groups.sort((a, b) => {

@@ -124,16 +124,16 @@ function getIterator<T>(iterable: AnyIterable<T>) {
 
 /** Implementation of the `zip` function accounting for TS compiler limitations */
 async function* __zip<Iterables extends AnyIterable<unknown>[], Value>(fillValue: Value, ...iterables: Iterables) {
-    let iterators = iterables.map(getIterator);
-    let its = (await Promise.all(iterators)).map(it => ({ done: false, iterator: it }));
+    const iterators = iterables.map(getIterator);
+    const its = (await Promise.all(iterators)).map(it => ({ done: false, iterator: it }));
     let remaining = its.length;
     while (true) {
-        let result = [];
-        for (let it of its) {
+        const result = [];
+        for (const it of its) {
             if (it.done) {
                 result.push(fillValue);
             } else {
-                let current = await it.iterator.next();
+                const current = await it.iterator.next();
                 if (current.done) {
                     it.done = true;
                     --remaining;
@@ -189,7 +189,7 @@ export function slice<T>(iterable: AnyIterable<T>, start?: number, end?: number)
 
     async function* _slice() {
         let index = 0;
-        for await (let item of iterable) {
+        for await (const item of iterable) {
             if (index >= theEnd) {
                 return;
             }
@@ -212,7 +212,7 @@ export function slice<T>(iterable: AnyIterable<T>, start?: number, end?: number)
 */
 export async function arrayFrom<T>(iterable: AnyIterable<T>) {
     const result: T[] = [];
-    for await (let item of iterable) {
+    for await (const item of iterable) {
         result.push(item);
     }
     return result;
@@ -250,8 +250,8 @@ export async function length<T>(iterable: AnyIterable<T>): Promise<number> {
  */
 export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Promise<Result | undefined> {
     let result: Result | undefined;
-    for await (let item of iterable) {
-        if (undefined !== (result = testAndMap(item))) {
+    for await (const item of iterable) {
+        if (undefined !== (result = await testAndMap(item))) {
             break;
         }
     }
