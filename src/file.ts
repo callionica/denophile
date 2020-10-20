@@ -343,7 +343,12 @@ const extensions: string[] = [];
 /** The maximum number of file extensions to cache */
 const extensionsMaximumLength = 1024;
 
-/** Returns the name/extension of a file path */
+/**
+ * Returns the name/extension of a file path.
+ * Folders with periods do not have extensions.
+ * Only files have extensions.
+ * It's important to indicate folders with a terminating slash.
+*/
 export function fileName(filePath: FilePath): FileName {
 
     // Extensions are shared by many files, so cache and reuse them to reduce memory
@@ -369,12 +374,14 @@ export function fileName(filePath: FilePath): FileName {
     const slashIndex = path.lastIndexOf(SEPARATOR, last);
     const name = decode(path.substring(slashIndex + 1, last + 1));
 
-    const dotIndex = name.lastIndexOf(".");
-    if (dotIndex >= 0) {
-        return {
-            name: name.substring(0, dotIndex),
-            extension: cache(name.substring(dotIndex + 1))
-        };
+    if (!isFolderPath(filePath)) {
+        const dotIndex = name.lastIndexOf(".");
+        if (dotIndex >= 0) {
+            return {
+                name: name.substring(0, dotIndex),
+                extension: cache(name.substring(dotIndex + 1))
+            };
+        }
     }
 
     return { name };
