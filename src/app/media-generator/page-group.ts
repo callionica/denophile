@@ -1,12 +1,10 @@
 import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
 
 export function pageGroup(mediaGroup: MediaGroup) {
-	const title = mediaGroup.name.replace("--", "-");
-	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", undefined].includes(mediaGroup.files[0].info.subgroupNumber));
 
-	const hideSeason = displaySubgroup ? "" : "data-hide-season";
-
-	const poster = mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0] || "folder.jpg"; // TODO
+	function fileDisplaySubgroup(file: MediaPrimary) {
+		return file.info.subgroupNumber || file.info.year || "";
+	}
 
 	function fileDisplayName(file: MediaPrimary) {
 		console.log(file.info);
@@ -14,6 +12,14 @@ export function pageGroup(mediaGroup: MediaGroup) {
 		const name = file.info.datelessName || file.name;
 		return `${group ? group + " - " : ""}${name}`.replace("--", "-");
 	}
+
+	const title = mediaGroup.name.replace("--", "-");
+	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", ""].includes(fileDisplaySubgroup(mediaGroup.files[0])));
+
+	const hideSeason = displaySubgroup ? "" : "data-hide-season";
+
+	const poster = mediaGroup.images[0] || mediaGroup.imagesFromFirstFile[0] || "folder.jpg"; // TODO
+
 
 	const media = mediaGroup.files.map(file => {
 
@@ -23,7 +29,7 @@ export function pageGroup(mediaGroup: MediaGroup) {
 			}
 		}
 
-		return `<a href="${file.urlName}/index.html"><span class="season">${file.info.subgroupNumber || file.info.year || ""}</span><span class="episode">${file.info.number || numberFromDate(file) || ""}</span><span class="name">${fileDisplayName(file)}</span></a>`;
+		return `<a href="${file.urlName}/index.html"><span class="season">${fileDisplaySubgroup(file)}</span><span class="episode">${file.info.number || numberFromDate(file) || ""}</span><span class="name">${fileDisplayName(file)}</span></a>`;
 
 	}).join("\n");
 
