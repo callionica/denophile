@@ -492,6 +492,18 @@ export class MediaPrimary extends Primary {
     }
 
     /**
+     * Returns the satellites that match the provided extensions
+     * 
+     * @param extensions Array of extensions to match
+     */
+    async getSatellites(extensions: string[]): Promise<Satellite<this>[]> {
+        const match = (s: Satellite<this>) => {
+            return s.extension && extensions.includes(s.extension.toLowerCase());
+        };
+        return (await this.satellites()).filter(match);
+    }
+
+    /**
      * Searches for matching satellites starting at the current item and then
      * through subgroup, subgroup-tagged group, group, and container primaries
      * if no match is found at a lower level.
@@ -510,16 +522,9 @@ export class MediaPrimary extends Primary {
      */
     async findSatellitesLikeFile(extensions: string[]): Promise<Satellite<this>[]> {
 
-        const getSatellites = async (primary: this) => {
-            const match = (s: Satellite<this>) => {
-                return s.extension && extensions.includes(s.extension.toLowerCase());
-            };
-            return (await primary.satellites()).filter(match);
-        };
-
         // Look for matching satellites on this object.
         if (this !== undefined) {
-            const satellites = await getSatellites(this);
+            const satellites = await this.getSatellites(extensions);
 
             if (satellites.length > 0) {
                 return satellites;
@@ -569,17 +574,10 @@ export class MediaPrimary extends Primary {
         const name = this.name;
         const parent = this.parent!;
 
-        const getSatellites = async (primary: this) => {
-            const match = (s: Satellite<this>) => {
-                return s.extension && extensions.includes(s.extension.toLowerCase());
-            };
-            return (await primary.satellites()).filter(match);
-        };
-
         // Look for satellites on this folder.
         for (const primary of [this]) {
             if (primary !== undefined) {
-                const satellites = await getSatellites(primary);
+                const satellites = await primary.getSatellites(extensions);
 
                 if (satellites.length > 0) {
                     return satellites;
@@ -590,7 +588,7 @@ export class MediaPrimary extends Primary {
         // If no satellites, look for tagged satellites on the parent folder.
         for (const primary of [parent]) {
             if (primary !== undefined) {
-                const satellites = await getSatellites(primary);
+                const satellites = await primary.getSatellites(extensions);
 
                 if (name !== undefined) {
                     const subgroupSatellites = satellites.filter(s => s.tags.includes(name));
@@ -624,7 +622,7 @@ export class MediaPrimary extends Primary {
 
     /** Subtitles */
     async subtitles(): Promise<Satellite<this>[]> {
-        return this.findSatellites(SUBTITLE_EXTENSIONS);
+        return this.getSatellites(SUBTITLE_EXTENSIONS);
     }
 }
 
