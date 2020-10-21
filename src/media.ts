@@ -628,6 +628,11 @@ export class MediaPrimary extends Primary {
      * or an empty string if no description is found.
      * */
     async description(language = "en"): Promise<string> {
+        // Note that this algo prefers a non-English episode description
+        // over an English season description due to the way we get
+        // relevant descriptions using the fallback algo before we filter
+        // for languages.
+
         const descriptions = await this.descriptions();
         
         // Preferred language
