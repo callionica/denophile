@@ -14,11 +14,11 @@ const mediaGroups = await getMediaGroups(all);
 const destination = "/Volumes/WD01/_current/_tmp_/";
 
 async function writeVideoPage(mediaGroup: MediaGroup, file: MediaPrimary) {
-    
+
     const pageLocation = destination + `${mediaGroup.urlName}/${file.urlName}/`;
     await Deno.mkdir(pageLocation, { recursive: true });
 
-    const page = pageVideo(mediaGroup, file);
+    const page = await pageVideo(mediaGroup, file);
 
     const pageData = new TextEncoder().encode(page);
     await writeFile(pageLocation + "index.html", pageData);
@@ -37,7 +37,7 @@ async function writeVideoPage(mediaGroup: MediaGroup, file: MediaPrimary) {
 }
 
 for (const mediaGroup of mediaGroups) {
-    
+
     const pageLocation = destination + mediaGroup.urlName + "/";
     console.log(pageLocation);
     await Deno.mkdir(pageLocation, { recursive: true });

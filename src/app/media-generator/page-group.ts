@@ -1,4 +1,4 @@
-import { IMAGE_EXTENSIONS, AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
+import { AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
 
 export function pageGroup(mediaGroup: MediaGroup) {
 

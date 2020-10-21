@@ -611,6 +611,10 @@ export class MediaPrimary extends Primary {
         }
         return this.findSatellitesLikeFile(extensions);
     }
+
+    async images(): Promise<Satellite<this>[]> {
+        return this.findSatellites(IMAGE_EXTENSIONS);
+    }
 }
 
 export type MediaGroup = {
@@ -703,11 +707,11 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
         group.subgroups = [...new Set(group.files.map(file => file.info.subgroup || ""))] as string[];
 
         // Get the images associated with this folder 
-        group.images = await group.folder.findSatellites(IMAGE_EXTENSIONS);
+        group.images = await group.folder.images();
 
         // Get the first set of images from a file
         const fileImages = await first(group.files, async (file) => {
-            const images = await file.findSatellites(IMAGE_EXTENSIONS);
+            const images = await file.images();
             if (images.length > 0) {
                 return images;
             }
