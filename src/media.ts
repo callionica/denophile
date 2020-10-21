@@ -624,17 +624,28 @@ export class MediaPrimary extends Primary {
     /**
      * Returns the description for the provided language
      * or the English description if the provided language is not available
+     * or the first description if English isn't available
      * or an empty string if no description is found.
      * */
     async description(language = "en"): Promise<string> {
         const descriptions = await this.descriptions();
         
+        // Preferred language
         let description = descriptions.find(s => s.language === language);
+
+        // English
         if (description === undefined) {
             description = descriptions.find(s => s.language === "en");
         }
 
+        // Any available language
+        if (description === undefined) {
+            description = descriptions[0];
+        }
+
+        // Empty string
         const result = (description !== undefined) ? await readTextFile(description.target) : "";
+    
         return result;
     }
 
