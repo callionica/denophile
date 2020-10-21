@@ -612,8 +612,19 @@ export class MediaPrimary extends Primary {
         return this.findSatellitesLikeFile(extensions);
     }
 
+    /** Images use the fallback algorithm */
     async images(): Promise<Satellite<this>[]> {
         return this.findSatellites(IMAGE_EXTENSIONS);
+    }
+
+    /** Descriptions use the fallback algorithm */
+    async descriptions(): Promise<Satellite<this>[]> {
+        return this.findSatellites(TEXT_EXTENSIONS);
+    }
+
+    /** Subtitles */
+    async subtitles(): Promise<Satellite<this>[]> {
+        return this.findSatellites(SUBTITLE_EXTENSIONS);
     }
 }
 
