@@ -27,6 +27,34 @@ function hasPrefix(entry: Entry, prefix: string) {
     return name.startsWith(prefix) && ((name.length === length) || (name[length] === "."));
 }
 
+export const MIME_TYPES: Record<string, string> = {
+    "htm": "text/html",
+    "html": "text/html",
+    "css": "text/css",
+    "js": "application/javascript",
+    "txt": "text/plain",
+    "ttml": "application/ttml+xml",
+    "vtt": "text/vtt",
+    "webvtt": "text/vtt",
+    "srt": "text/plain",
+    "opml": "text/x-opml",
+    "rss": "application/rss+xml",
+    "atom": "application/atom+xml",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "ts": "video/mp2t",
+    "mp2": "video/mpeg",
+    "mp2v": "video/mpeg",
+    "mp4": "video/mp4",
+    "mp4v": "video/mp4",
+    "m4v": "video/x-m4v",
+    "mp3": "audio/mpeg",
+    "m4a": "audio/m4a",
+    "m3u": "audio/x-mpegurl",
+    "m3u8": "audio/x-mpegurl",
+};
+
 export class Satellite<T extends Primary> {
     primary: T;
     entry: Entry;
@@ -47,6 +75,10 @@ export class Satellite<T extends Primary> {
 
     get extension(): string | undefined {
         return this.entry.extension;
+    }
+
+    get mimetype(): string | undefined {
+        return (this.extension !== undefined) ? MIME_TYPES[this.extension] : undefined;
     }
 
     get target(): URL {
@@ -104,6 +136,14 @@ export class Primary {
 
     get extension(): string | undefined {
         return this.entry.extension;
+    }
+
+    get mimetype(): string | undefined {
+        return (this.extension !== undefined) ? MIME_TYPES[this.extension] : undefined;
+    }
+    
+    get target(): URL {
+        return this.entry.targets[0];
     }
 
     get isFolder(): boolean {
