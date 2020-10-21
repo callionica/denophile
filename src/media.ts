@@ -322,13 +322,25 @@ export class MediaPrimary extends Primary {
 
         function cleanup(text: string) {
             text = text.replace(/[_\s]+/g, " ");
-            return text;
+            return text.trim();
         }
+
+        const canBeGroup = (folder: MediaPrimary): boolean => {
+            if (folder === this.root) {
+                return false;
+            }
+
+            if (folder.name.startsWith("_")) {
+                return false;
+            }
+
+            return true;
+        };
 
         if (result.group === undefined) {
             if (this.parent !== undefined) {
                 const grandParent = this.parent.parent;
-                if ((grandParent !== undefined) && (grandParent !== this.root)) {
+                if ((grandParent !== undefined) && canBeGroup(grandParent)) {
                     result.group = grandParent.name;
                     if (result.subgroup === undefined) {
                         result.subgroup = this.parent.name;
