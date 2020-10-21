@@ -302,6 +302,17 @@ export async function readFile(fileOrPath: FileOrPath, buffer?: Uint8Array): Pro
     return result;
 }
 
+/**
+ * Reads an entire file if it is smaller than the internal or external buffer.
+ * If the file is not smaller than the buffer used, an exception is thrown.
+ * 
+ * Like readFile except it returns a string.
+ */
+export async function readTextFile(fileOrPath: FileOrPath, buffer?: Uint8Array): Promise<string> {
+    const data = await readFile(fileOrPath, buffer);
+    return new TextDecoder().decode(data);
+}
+
 /** Returns the file system entries contained in the specified folder */
 export function directoryEntries(folderPath: FilePath): AsyncIterable<URL> {
     if (!isFolderPath(folderPath)) {
