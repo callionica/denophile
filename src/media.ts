@@ -634,7 +634,7 @@ export class MediaPrimary extends Primary {
         // for languages.
 
         const descriptions = await this.descriptions();
-        
+
         // Preferred language
         let description = descriptions.find(s => s.language === language);
 
@@ -650,7 +650,7 @@ export class MediaPrimary extends Primary {
 
         // Empty string
         const result = (description !== undefined) ? await readTextFile(description.target) : "";
-    
+
         return result;
     }
 
