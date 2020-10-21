@@ -20,9 +20,10 @@ export function pageGroups(mediaGroups: MediaGroup[]) {
     }
 
     const groups = mediaGroups.map(mediaGroup => {
+        const link = (mediaGroup.files.length !== 1) ? `${mediaGroup.urlName}/index.html` : `${mediaGroup.urlName}/${mediaGroup.files[0].urlName}/index.html`;
         const fancyName = name(mediaGroup);
         const article = (fancyName.article !== undefined) ? `<span class="article">${fancyName.article} </span>` : "";
-        return `<div><a href="${mediaGroup.urlName + "/index.html"}">${article}${fancyName.body}</a></div>`;
+        return `<div><a href="${link}">${article}${fancyName.body}</a></div>`;
     }).join("\n");
 
     const html =
