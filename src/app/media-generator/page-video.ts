@@ -1,5 +1,4 @@
 import {
-    MEDIA_EXTENSIONS, SUBTITLE_EXTENSIONS,
     MediaGroup, MediaPrimary,
 } from "../../media.ts";
 

@@ -12,7 +12,7 @@ type IMAGE_USE = "backdrop" | "poster";
 
 export const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"];
 export const SUBTITLE_EXTENSIONS = ["vtt", "webvtt", "ttml", "srt"];
-export const TEXT_EXTENSIONS = ["txt"];
+export const DESCRIPTION_EXTENSIONS = ["txt"];
 export const AUDIO_EXTENSIONS = ["m4a", "mp3"];
 export const VIDEO_EXTENSIONS = ["m4v", "mp4", "ts"];
 export const MEDIA_EXTENSIONS = [...AUDIO_EXTENSIONS, ...VIDEO_EXTENSIONS];
@@ -619,7 +619,7 @@ export class MediaPrimary extends Primary {
 
     /** Descriptions use the fallback algorithm */
     async descriptions(): Promise<Satellite<this>[]> {
-        return this.findSatellites(TEXT_EXTENSIONS);
+        return this.findSatellites(DESCRIPTION_EXTENSIONS);
     }
 
     /** Subtitles */
