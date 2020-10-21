@@ -4,6 +4,7 @@
 // The layers are:
 // media.ts -> satellite.ts -> junction.ts -> file.ts
 
+import { readTextFile } from "./file.ts";
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 import { toSortableName, toURLName, first, generable } from "./utility.ts";
@@ -620,7 +621,24 @@ export class MediaPrimary extends Primary {
         return this.findSatellites(DESCRIPTION_EXTENSIONS);
     }
 
-    /** Subtitles */
+    /**
+     * Returns the description for the provided language
+     * or the English description if the provided language is not available
+     * or an empty string if no description is found.
+     * */
+    async description(language = "en"): Promise<string> {
+        const descriptions = await this.descriptions();
+        
+        let description = descriptions.find(s => s.language === language);
+        if (description === undefined) {
+            description = descriptions.find(s => s.language === "en");
+        }
+
+        const result = (description !== undefined) ? await readTextFile(description.target) : "";
+        return result;
+    }
+
+    /** Subtitles use the direct algorithm */
     async subtitles(): Promise<Satellite<this>[]> {
         return this.getSatellites(SUBTITLE_EXTENSIONS);
     }
