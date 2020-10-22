@@ -4,7 +4,6 @@
 // The layers are:
 // media.ts -> satellite.ts -> junction.ts -> file.ts
 
-import { readTextFile } from "./file.ts";
 import type { Entry } from "./junction.ts";
 import { Primary, Satellite } from "./satellite.ts";
 import { toSortableName, toURLName, first, generable } from "./utility.ts";
@@ -661,7 +660,7 @@ export class MediaPrimary extends Primary {
         }
 
         // Empty string
-        const result = (description !== undefined) ? await readTextFile(description.target) : "";
+        const result = (description !== undefined) ? await description.text() : "";
 
         return result;
     }

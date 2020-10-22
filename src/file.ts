@@ -150,6 +150,10 @@ export async function writeFile(filePath: FilePath, data: Uint8Array, options?: 
     return await Deno.writeFile(adaptFilePath(filePath), data, options);
 }
 
+export async function writeTextFile(filePath: FilePath, data: string, options?: WriteFileOptions | undefined): Promise<void> {
+    return writeFile(filePath, new TextEncoder().encode(data), options);
+}
+
 // Deno.read does not guarantee it will read the requested length even if the file is large enough,
 // so readFull implements the loop that fills the provided buffer as far as possible
 async function readFull(rid: RID, buffer: Uint8Array): Promise<number> {

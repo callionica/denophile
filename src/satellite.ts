@@ -10,6 +10,7 @@ import type { FileName } from "./file.ts";
 
 import type { Entry } from "./junction.ts";
 import { generable } from "./utility.ts";
+import { readTextFile } from "./file.ts";
 
 function first<Item, Result>(iterable: Iterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Result | undefined {
     let result: Result | undefined;
@@ -87,6 +88,11 @@ export class Satellite<T extends Primary> {
 
     get isFolder(): boolean {
         return this.entry.isFolder;
+    }
+
+    /** Reads the file contents as text (if the file is small) */
+    async text(): Promise<string> {
+        return await readTextFile(this.target);
     }
 
     /** The primary language of this satellite resource */
