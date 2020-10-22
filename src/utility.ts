@@ -51,6 +51,29 @@ export function generable<Args extends unknown[], Result>(generator: (...t: Args
     };
 }
 
+/**
+ * Converts a generator function to a function that returns a repeatable iterable.
+ * 
+ * Although Javascript generator functions behave as if they return iterables,
+ * the iterable they return can only be used once (it's really an iterator).
+ * 
+ * Use this function to create a new function that returns real, reusable iterables.
+ * 
+ * @param generator A generator function
+ */
+export function iterable<Args extends unknown[], Result>(generator: (...t: Args) => Generator<Result>): (...t: Args) => Iterable<Result> {
+    // Javascript generators are not iterables (although they can be used that way ONCE!)
+    // Javascript generators are iterators.
+    // To create a real, reusable iterable, we need to capture the function that returns
+    // the generator and call that function each time the iterator is obtained.
+    return (...args) => {
+        return {
+            repeatable: true,
+            [Symbol.iterator]: () => { return generator(...args); }
+        };
+    };
+}
+
 /** Converts an iterable or iterator into its value type */
 export type ValueOfIterable<T> =
     T extends Iterable<infer V0> ? V0 :
