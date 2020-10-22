@@ -1,6 +1,6 @@
 import { readFile, readTextFile } from "../../file.ts";
 import { MediaGroup, MediaPrimary } from "../../media.ts";
-import { fileDisplayNumber, fileDisplaySubgroupNumber } from "./page-group.ts";
+import { divideTitle, fileDisplayNumber, fileDisplaySubgroupNumber } from "./page-group.ts";
 
 type F = { url: URL, mimetype: string | undefined };
 
@@ -65,6 +65,9 @@ function htmlVideo(media: F, image: F, subtitles: (F & { language: string })[]):
 
 function htmlPage(mediaGroup: MediaGroup, file: MediaPrimary, title: string, description: string, image: F, media: F, subtitles: (F & { language: string })[]): string {
     const name = (file.info.datelessName || file.name).replace("--", "-");
+    const splitName = divideTitle(name);
+	const h2 = (splitName.subtitle !== undefined) ? `<h2 class="episode_name">${splitName.subtitle}</h2>` : "";
+
     let group = (file.info.group || mediaGroup.group).replace("--", "-");
     if (group === name) {
         group = "";
@@ -93,7 +96,8 @@ ${htmlVideo(media, image, subtitles)}
 	<div class="overlay">
 		<div class="sized-content">
 			<div id="play" class="play" onclick="togglePlay()">▶</div>	
-<h1 class="episode_name">${name}</h1>
+<h1 class="episode_name">${splitName.title}</h1>
+${h2}
 <h2><span class="show">${group}</span> <span class="locator">${fileSE(file)}</span></h2>
 			<p class="elapsed"><span class="currentTime"></span><span class="duration">--:--</span></p>
 		</div>

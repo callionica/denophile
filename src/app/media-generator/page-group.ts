@@ -23,7 +23,7 @@ function fileDisplayName(mediaGroup: MediaGroup, file: MediaPrimary) {
 	return `${group ? group + " - " : ""}${name}`.replace("--", "-");
 }
 
-function divideTitle(title: string): { title: string, subtitle?: string } {
+export function divideTitle(title: string): { title: string, subtitle?: string } {
 	const divider = " - ";
 	const index = title.indexOf(divider);
 	if (index < 0) {
