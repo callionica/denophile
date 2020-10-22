@@ -63,6 +63,21 @@ export function isFolderPath(filePath: FilePath): boolean {
     return filePath.endsWith(SEPARATOR);
 }
 
+/**
+ * Returns true if the path exists in the file system
+ * */
+export async function exists(filePath: FilePath): Promise<boolean> {
+    try {
+        await Deno.lstat(adaptFilePath(filePath));
+        return true;
+    } catch (e) {
+        if (e instanceof Deno.errors.NotFound) {
+            return false;
+        }
+        throw e;
+    }
+}
+
 /** Opens a file */
 export async function open(filePath: FilePath): Promise<File> {
     return await Deno.open(adaptFilePath(filePath)) as unknown as File;
