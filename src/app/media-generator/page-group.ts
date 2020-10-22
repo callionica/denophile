@@ -1,4 +1,4 @@
-import { AUDIO_EXTENSIONS, MediaGroup, MediaPrimary } from "../../media.ts";
+import { MediaGroup, MediaPrimary } from "../../media.ts";
 
 // The subgroup number or the year
 export function fileDisplaySubgroupNumber(file: MediaPrimary) {
