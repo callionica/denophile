@@ -1,4 +1,4 @@
-import { writeTextFile, FilePath, toFileURL } from "../../file.ts";
+import { writeTextFile, FilePath, toFileURL, exists } from "../../file.ts";
 import { srt2vtt, ttml2vtt } from "../../subtitle.ts";
 import { loadEntry } from "../../junction.ts";
 import { getMediaGroups, MediaGroup, MediaPrimary } from "../../media.ts";
@@ -32,9 +32,12 @@ async function getOrConvertWebVTTs(primary: MediaPrimary, destinationFolder: Fil
         const notVTT = subtitles.filter(s => !isWebVTT(s));
         webVTTs = await Promise.all(notVTT.map(async (s) => {
             const path = new URL(`${s.name}.${s.extension}.vtt`, dest);
-            const convert = (s.extension === "ttml") ? ttml2vtt : srt2vtt;
-            const converted = convert(await s.text());
-            await writeTextFile(path, converted);
+            if (!(await exists(path))) {
+                console.log("sub", path.toString());
+                const convert = (s.extension === "ttml") ? ttml2vtt : srt2vtt;
+                const converted = convert(await s.text());
+                await writeTextFile(path, converted);
+            }
             return { url: path, mimetype: MIME_TYPES.vtt, language: s.language };
         }));
     }
