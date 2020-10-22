@@ -23,8 +23,20 @@ function fileDisplayName(mediaGroup: MediaGroup, file: MediaPrimary) {
 	return `${group ? group + " - " : ""}${name}`.replace("--", "-");
 }
 
+function divideTitle(title: string): { title: string, subtitle?: string } {
+	const divider = " - ";
+	const index = title.indexOf(divider);
+	if (index < 0) {
+		return { title };
+	}
+	return { title: title.substring(0, index), subtitle: title.substring(index + divider.length)}
+}
+
 export function pageGroup(mediaGroup: MediaGroup) {
 	const title = mediaGroup.name.replace("--", "-");
+	const splitTitle = divideTitle(title);
+	const h2 = (splitTitle.subtitle !== undefined) ? `<h2>${splitTitle.subtitle}</h2>` : "";
+
 	const displaySubgroup = (mediaGroup.subgroups.length > 1) || (!["1", ""].includes(fileDisplaySubgroupNumber(mediaGroup.files[0])));
 
 	const hideSeason = displaySubgroup ? "" : "data-hide-season";
@@ -45,7 +57,8 @@ export function pageGroup(mediaGroup: MediaGroup) {
 	<script src="../container-script.js"></script>
 	</head>
 	<body data-page="group" ${hideSeason}>
-	<h1>${title}</h1>
+	<h1>${splitTitle.title}</h1>
+	${h2}
 	<div id="sidebar"><img src="${poster}"></div>
 	<div id="content">
 	${media}
