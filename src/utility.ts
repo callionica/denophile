@@ -271,7 +271,7 @@ export async function length<T>(iterable: AnyIterable<T>): Promise<number> {
  * @param iterable A collection of items
  * @param testAndMap A function that returns a relevant value when the provided item matches some criteria (and otherwise returns undefined).
  */
-export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMap: (item: Item) => (Result | undefined)): Promise<Result | undefined> {
+export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMap: (item: Item) => (Promise<Result | undefined> | Result | undefined)): Promise<Result | undefined> {
     let result: Result | undefined;
     for await (const item of iterable) {
         if (undefined !== (result = await testAndMap(item))) {
@@ -279,6 +279,17 @@ export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMa
         }
     }
     return result;
+}
+
+export function filter<Item>(iterable: AnyIterable<Item>, predicate: (item: Item) => (Promise<boolean> | boolean)): AsyncIterable<Item> {
+    async function* filter_() {
+        for await (const item of iterable) {
+            if (await predicate(item)) {
+                yield item;
+            }
+        }
+    }
+    return generable(filter_)();
 }
 
 /**
