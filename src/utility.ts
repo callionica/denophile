@@ -281,6 +281,14 @@ export async function first<Item, Result>(iterable: AnyIterable<Item>, testAndMa
     return result;
 }
 
+/**
+ * Like Array.filter except asynchronous.
+ * 
+ * Takes a synchronous or asynchronous iterable as input.
+ * Takes a synchronous or asynchronous function as the predicate.
+ * Returns an asynchronous iterable that returns the items
+ * that match the predicate.
+ */
 export function filter<Item>(iterable: AnyIterable<Item>, predicate: (item: Item) => (Promise<boolean> | boolean)): AsyncIterable<Item> {
     async function* filter_() {
         for await (const item of iterable) {
