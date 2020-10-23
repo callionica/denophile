@@ -46,13 +46,22 @@ const JUNCTION_MAXIMUM_LENGTH = 32 * 1024; // 32K maximum bytes in a junction fi
 
 type FileURL = URL;
 
+interface Junction {
+    type: "OPTIONAL" | "REQUIRED",
+    urls: URL[],
+}
+
 /** Reads lines from a text file and converts them to URL objects */
-async function loadJunction(url: URL): Promise<URL[]> {
+async function loadJunction(url: URL): Promise<Junction> {
     const data = await readFile(url, new Uint8Array(JUNCTION_MAXIMUM_LENGTH));
     const text = new TextDecoder().decode(data);
     const lines = text.split("\n");
-    const urls = lines.map(urlLine => new URL(urlLine, url));
-    return urls;
+    if (!["OPTIONAL", "REQUIRED"].includes(lines[0])) {
+        throw `Unexpected junction type '${lines[0]}'`;
+    }
+    const type = lines[0] as "OPTIONAL" | "REQUIRED";
+    const urls = lines.slice(1).map(urlLine => new URL(urlLine, url));
+    return { type, urls };
 }
 
 /**
@@ -73,6 +82,7 @@ export async function loadEntry(filePath: FilePath): Promise<Entry> {
     let targets = [url];
 
     // TODO - case sensitivity?
+    let targetsMayBeMissing = false;
     const isJunction = (name.extension === JUNCTION_EXTENSION);
     if (isJunction) {
         // When we have a junction file, the name of the entry
@@ -84,11 +94,13 @@ export async function loadEntry(filePath: FilePath): Promise<Entry> {
         name = fileName(name.name);
 
         // For a junction, the targets are read from the file
-        targets = await loadJunction(url);
+        const junction = await loadJunction(url);
+        targetsMayBeMissing = (junction.type === "OPTIONAL");
+        targets = junction.urls;
     }
 
     // TODO
-    const targetsMayBeMissing = isJunction;
+    
     return new Entry(name, targets, targetsMayBeMissing);
 }
 
