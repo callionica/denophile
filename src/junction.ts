@@ -37,28 +37,22 @@
 
 import {
     FilePath, FileName,
-    directoryEntries, fileName, isFolderPath, readFile, toFileURL
+    directoryEntries, fileName, isFolderPath, readFile, toFileURL, exists
 } from "./file.ts";
+import { filter } from "./utility.ts";
 
 const JUNCTION_EXTENSION = "junction";
 const JUNCTION_MAXIMUM_LENGTH = 32 * 1024; // 32K maximum bytes in a junction file 
 
 type FileURL = URL;
 
-/**
- * An entry in the tree of files and folders.
- */
-export interface Entry extends FileName {
-    targets: FileURL[];
-    isFolder: boolean;
-    children(): Promise<Entry[]>;
-}
-
 /** Reads lines from a text file and converts them to URL objects */
 async function loadJunction(url: URL): Promise<URL[]> {
     const data = await readFile(url, new Uint8Array(JUNCTION_MAXIMUM_LENGTH));
     const text = new TextDecoder().decode(data);
-    return text.split("\n").map(urlLine => new URL(urlLine, url));
+    const lines = text.split("\n");
+    const urls = lines.map(urlLine => new URL(urlLine, url));
+    return urls;
 }
 
 /**
@@ -93,27 +87,45 @@ export async function loadEntry(filePath: FilePath): Promise<Entry> {
         targets = await loadJunction(url);
     }
 
-    return new Entry_(name, targets);
+    // TODO
+    const targetsMayBeMissing = isJunction;
+    return new Entry(name, targets, targetsMayBeMissing);
 }
 
 /** Create a junction without writing it to disk */
 export function createEntry(name: FileName, targets: FilePath[]) {
-    return new Entry_(name, targets.map(toFileURL));
+    return new Entry(name, targets.map(toFileURL));
 }
 
-class Entry_ implements Entry {
+export class Entry {
     name: string;
     extension?: string;
     targets: FileURL[];
+    targetsMayBeMissing: boolean;
 
-    constructor(name: FileName, targets: FileURL[]) {
+    constructor(name: FileName, targets: FileURL[], targetsMayBeMissing = false) {
         this.name = name.name;
         this.extension = name.extension;
         this.targets = targets;
+        this.targetsMayBeMissing = targetsMayBeMissing;
     }
 
     get isFolder(): boolean {
         return this.targets.some(isFolderPath);
+    }
+
+    targetsWithChildren(): AsyncIterable<URL> {
+        return filter(this.targets, async (url) => {
+            if (!isFolderPath(url)) {
+                return false;
+            }
+            
+            if (!this.targetsMayBeMissing) {
+                return true;
+            }
+
+            return await exists(url);
+        });
     }
 
     async children(): Promise<Entry[]> {
@@ -123,12 +135,13 @@ class Entry_ implements Entry {
         // different locations before we can return a result.
 
         const result: Entry[] = [];
-        for (const target of this.targets.filter(isFolderPath)) {
+        for await (const target of this.targetsWithChildren()) {
             for await (const child of directoryEntries(target)) {
                 const entry = await loadEntry(child);
                 // TODO - case sensitivity
                 const found = result.find(existingEntry => (existingEntry.name === entry.name) && (existingEntry.extension === entry.extension));
                 if (found) {
+                    found.targetsMayBeMissing ||= entry.targetsMayBeMissing;
                     found.targets.push(...entry.targets);
                 } else {
                     result.push(entry);
