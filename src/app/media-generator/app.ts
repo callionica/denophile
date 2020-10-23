@@ -8,7 +8,7 @@ import { pageGroups } from "./page-groups.ts";
 import { pageVideo } from "./page-video.ts";
 import { MIME_TYPES, Satellite } from "../../satellite.ts";
 
-const entry = await loadEntry("/Volumes/A128/TV.junction");
+const entry = await loadEntry("/Users/user/Desktop/TV.junction");
 const mediaEntry = new MediaPrimary(entry);
 const all = await arrayFrom(mediaEntry.descendants());
 const mediaGroups = await getMediaGroups(all);
