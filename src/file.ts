@@ -12,13 +12,10 @@ import { generable } from "./utility.ts";
  * @param command The application to run
  * @param commandArguments The arguments to provide to the application
  */
-export async function execute(command: string, commandArguments: string): Promise<string> {
-    // Separate each argument as Deno requires
-    const args = commandArguments.split(" ");
-
+export async function execute(command: string, ...commandArguments: string[]): Promise<string> {
     // Use piped to allow us to read the output
     const p = Deno.run({
-        cmd: [command, ...args],
+        cmd: [command, ...commandArguments],
         stdout: "piped",
         stderr: "piped",
     });
@@ -33,6 +30,12 @@ export async function execute(command: string, commandArguments: string): Promis
 
     // Return the output
     return new TextDecoder().decode(await p.output());
+}
+
+export async function cat(input: { source: FilePath, destination: FilePath }) {
+    for await (const chunk of readRanges(input.source, { length: 4 * 1024 })) {
+        await writeFile(input.destination, chunk, { append: true });
+    }
 }
 
 /** A file in the file system */
