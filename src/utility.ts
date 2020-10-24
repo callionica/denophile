@@ -3,6 +3,13 @@
 
 // A library of compile-time and run-time utilities by Callionica
 
+export function dataToHex(data: Uint8Array): string {
+    function byteToHex(byte: number): string {
+        return byte.toString(16).padStart(2, "0");
+    }
+    return Array.prototype.map.call(data, byteToHex).join("");
+}
+
 /** A type that can be either an asynchronous or a synchronous iterable (such as an array or a generator) */
 export type AnyIterable<T> = AsyncIterable<T> | Iterable<T>;
 
