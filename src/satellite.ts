@@ -56,6 +56,27 @@ export const MIME_TYPES: Record<string, string> = {
     "m3u8": "audio/x-mpegurl",
 };
 
+export const MIME_EXTENSIONS: Record<string, string> = {
+    "text/html": "html",
+    "text/css": "css",
+    "application/javascript": "js",
+    "text/plain": "txt",
+    "application/ttml+xml": "ttml",
+    "text/vtt": "vtt",
+    "text/x-opml": "opml",
+    "application/rss+xml": "rss",
+    "application/atom+xml": "atom",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "video/mp2t": "ts",
+    "video/mpeg": "mp2",
+    "video/mp4": "mp4",
+    "video/x-m4v": "m4v",
+    "audio/mpeg": "mp3",
+    "audio/m4a": "m4a",
+    "audio/x-mpegurl": "m3u8",
+};
+
 export class Satellite<T extends Primary> {
     primary: T;
     entry: Entry;
