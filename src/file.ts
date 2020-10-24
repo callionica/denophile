@@ -5,6 +5,36 @@ import { generable } from "./utility.ts";
 // Callionica's minimal API for accessing the file system built on top of Deno's built-in, low-level file API
 // Scroll past the code for more detailed documentation.
 
+/**
+ * Executes an application and returns the output if success
+ * or throws an error on failure.
+ * 
+ * @param command The application to run
+ * @param commandArguments The arguments to provide to the application
+ */
+export async function execute(command: string, commandArguments: string): Promise<string> {
+    // Separate each argument as Deno requires
+    const args = commandArguments.split(" ");
+    
+    // Use piped to allow us to read the output
+    const p = Deno.run({
+        cmd: [command, ...args],
+        stdout: "piped",
+        stderr: "piped",
+    });
+
+    // Wait for process to finish
+    const { success } = await p.status();
+
+    if (!success) {
+        const message = new TextDecoder().decode(await p.stderrOutput());
+        throw `${message}`;
+    }
+
+    // Return the output
+    return new TextDecoder().decode(await p.output());
+}
+
 /** A file in the file system */
 export interface File { _type: 'File'; }
 
