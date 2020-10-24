@@ -15,7 +15,7 @@ import { generable } from "./utility.ts";
 export async function execute(command: string, commandArguments: string): Promise<string> {
     // Separate each argument as Deno requires
     const args = commandArguments.split(" ");
-    
+
     // Use piped to allow us to read the output
     const p = Deno.run({
         cmd: [command, ...args],
@@ -78,6 +78,15 @@ export function toFileURL(filePath: FilePath): URL {
         }
     }
     return filePath;
+}
+
+/** Converts a URL to a file path */
+export function toFilePath(filePath: FilePath): string {
+    const url = toFileURL(filePath);
+    if (url.protocol != "file:") {
+        throw new TypeError("Must be a file URL.");
+    }
+    return decodeURIComponent(url.pathname);
 }
 
 const SEPARATOR = "/";
