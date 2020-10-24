@@ -6,7 +6,7 @@ import { generable } from "./utility.ts";
 // Scroll past the code for more detailed documentation.
 
 /**
- * Executes an application and returns the output if success
+ * Executes an application and returns the output if successful
  * or throws an error on failure.
  * 
  * @param command The application to run
