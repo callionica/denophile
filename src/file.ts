@@ -78,6 +78,14 @@ export async function exists(filePath: FilePath): Promise<boolean> {
     }
 }
 
+/**
+ * Creates the directory in the file system.
+ * @param filePath The directory to make
+ */
+export async function makeDirectory(filePath: FilePath): Promise<void> {
+    return Deno.mkdir(adaptFilePath(filePath), { recursive: true });
+}
+
 /** Opens a file */
 export async function open(filePath: FilePath): Promise<File> {
     return await Deno.open(adaptFilePath(filePath)) as unknown as File;
