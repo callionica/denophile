@@ -6,7 +6,8 @@ import { arrayFrom } from "../../utility.ts";
 import { pageGroup } from "./page-group.ts";
 import { pageGroups } from "./page-groups.ts";
 import { pageVideo } from "./page-video.ts";
-import { MIME_TYPES, Satellite } from "../../satellite.ts";
+import { MIME_TYPES} from "../../file.ts";
+import { Satellite } from "../../satellite.ts";
 
 const entry = await loadEntry("/Users/user/Desktop/TV.junction");
 const mediaEntry = new MediaPrimary(entry);
