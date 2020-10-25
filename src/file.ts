@@ -467,6 +467,94 @@ export function fileName(filePath: FilePath): FileName {
     return { name };
 }
 
+export const MIME_TYPES: Record<string, string> = {
+    "htm": "text/html",
+    "html": "text/html",
+    "css": "text/css",
+    "js": "application/javascript",
+    "txt": "text/plain",
+    "ttml": "application/ttml+xml",
+    "vtt": "text/vtt",
+    "webvtt": "text/vtt",
+    "srt": "text/plain",
+    "opml": "text/x-opml",
+    "rss": "application/rss+xml",
+    "atom": "application/atom+xml",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "ts": "video/mp2t",
+    "mp2": "video/mpeg",
+    "mp2v": "video/mpeg",
+    "mp4": "video/mp4",
+    "mp4v": "video/mp4",
+    "m4v": "video/x-m4v",
+    "mp3": "audio/mpeg",
+    "m4a": "audio/m4a",
+    "m3u": "audio/x-mpegurl",
+    "m3u8": "audio/x-mpegurl",
+};
+
+export const MIME_EXTENSIONS: Record<string, string> = {
+    "text/html": "html",
+    "text/css": "css",
+    "application/javascript": "js",
+    "text/plain": "txt",
+    "application/ttml+xml": "ttml",
+    "text/vtt": "vtt",
+    "text/x-opml": "opml",
+    "application/rss+xml": "rss",
+    "application/atom+xml": "atom",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "video/mp2t": "ts",
+    "video/mpeg": "mp2",
+    "video/mp4": "mp4",
+    "video/x-m4v": "m4v",
+    "audio/mpeg": "mp3",
+    "audio/m4a": "m4a",
+    "audio/x-mpegurl": "m3u8",
+};
+
+
+const mimeFromContentTypeRE = /^\s*(?<mime>[^;\s]*)(?:;|\s|$)/;
+
+function getMimeType(response: Response): string | undefined {
+    const contentType = response.headers.get('Content-Type');
+    if (contentType) {
+        return mimeFromContentTypeRE.exec(contentType)?.groups?.mime;
+    }
+}
+
+export async function fetchToFile(
+    url: URL | string,
+    folderPath: FilePath, name: string, extension: string,
+    options: { extensionFromContentType: boolean } = { extensionFromContentType: true }
+): Promise<URL> {
+
+    const response = await fetch(url);
+    let ext = extension;
+    if (options.extensionFromContentType) {
+        const mimeType = getMimeType(response);
+        ext = (mimeType && MIME_EXTENSIONS[mimeType]) || extension;
+    }
+
+    // TODO - assuming small files here
+    const data = new Uint8Array(await response.arrayBuffer());
+
+    const location = toFileURL(folderPath);
+
+    // Write to a temporary file
+    const tempPath = new URL(`${name}.${ext}.download`, location);
+    await writeFile(tempPath, data);
+
+    // Once all data written, rename the file
+    const filePath = new URL(`${name}.${ext}`, location);
+    await Deno.rename(toFilePath(tempPath), toFilePath(filePath));
+
+    return filePath;
+}
+
 // NOTES
 
 // When you see FileOrPath, you can pass an open File, a file:// URL, or a file path or file:// URL as a string.

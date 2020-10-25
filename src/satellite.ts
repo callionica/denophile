@@ -1,4 +1,4 @@
-import type { FileName } from "./file.ts";
+import { FileName, MIME_TYPES } from "./file.ts";
 // satellite.ts provides a view over a file system that reveals associations between files.
 // Some files are Primaries and some are Satellites.
 // A Satellite's file name starts with the name of a Primary
@@ -28,54 +28,6 @@ function hasPrefix(entry: Entry, prefix: string) {
     return name.startsWith(prefix) && ((name.length === length) || (name[length] === "."));
 }
 
-export const MIME_TYPES: Record<string, string> = {
-    "htm": "text/html",
-    "html": "text/html",
-    "css": "text/css",
-    "js": "application/javascript",
-    "txt": "text/plain",
-    "ttml": "application/ttml+xml",
-    "vtt": "text/vtt",
-    "webvtt": "text/vtt",
-    "srt": "text/plain",
-    "opml": "text/x-opml",
-    "rss": "application/rss+xml",
-    "atom": "application/atom+xml",
-    "jpg": "image/jpeg",
-    "jpeg": "image/jpeg",
-    "png": "image/png",
-    "ts": "video/mp2t",
-    "mp2": "video/mpeg",
-    "mp2v": "video/mpeg",
-    "mp4": "video/mp4",
-    "mp4v": "video/mp4",
-    "m4v": "video/x-m4v",
-    "mp3": "audio/mpeg",
-    "m4a": "audio/m4a",
-    "m3u": "audio/x-mpegurl",
-    "m3u8": "audio/x-mpegurl",
-};
-
-export const MIME_EXTENSIONS: Record<string, string> = {
-    "text/html": "html",
-    "text/css": "css",
-    "application/javascript": "js",
-    "text/plain": "txt",
-    "application/ttml+xml": "ttml",
-    "text/vtt": "vtt",
-    "text/x-opml": "opml",
-    "application/rss+xml": "rss",
-    "application/atom+xml": "atom",
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "video/mp2t": "ts",
-    "video/mpeg": "mp2",
-    "video/mp4": "mp4",
-    "video/x-m4v": "m4v",
-    "audio/mpeg": "mp3",
-    "audio/m4a": "m4a",
-    "audio/x-mpegurl": "m3u8",
-};
 
 export class Satellite<T extends Primary> {
     primary: T;
