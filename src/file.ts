@@ -468,6 +468,7 @@ export function fileName(filePath: FilePath): FileName {
 }
 
 export const MIME_TYPES: Record<string, string> = {
+    "xml": "text/xml",
     "htm": "text/html",
     "html": "text/html",
     "css": "text/css",
@@ -496,6 +497,7 @@ export const MIME_TYPES: Record<string, string> = {
 };
 
 export const MIME_EXTENSIONS: Record<string, string> = {
+    "text/xml": "xml",
     "text/html": "html",
     "text/css": "css",
     "application/javascript": "js",
