@@ -528,6 +528,22 @@ function getMimeType(response: Response): string | undefined {
     }
 }
 
+/**
+ * Fetches a file from a URL, writes it to a file named `name.extension.download`
+ * and when the file is completely written, renames the local file to `name.extension`.
+ * 
+ * By default the file extension is calculated from the Content-Type header provided
+ * by the file server. You can force a specific extension to be used by setting `options`
+ * to `{ extensionFromContentType: false }`.
+ * 
+ * Returns the file:// URL of the local destination file.
+ * 
+ * @param url The URL to fetch
+ * @param folderPath The folder in which to write the downloaded file
+ * @param name The name to use for the downloaded file
+ * @param extension The fallback extension or the specified extension for the downloaded file
+ * @param options Allows you to control whether the file extension is derived from the Content-Type of the file provided by the server.
+ */
 export async function fetchToFile(
     url: URL | string,
     folderPath: FilePath, name: string, extension: string,
