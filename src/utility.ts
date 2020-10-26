@@ -3,6 +3,35 @@
 
 // A library of compile-time and run-time utilities by Callionica
 
+/** Wait for a specified number of milliseconds */
+export function delay(ms: number): Promise<void> {
+    return new Promise((resolve): number =>
+        setTimeout((): void => {
+            resolve();
+        }, ms)
+    );
+}
+
+/**
+ * Retries a function when it fails, with variable time delays between each attempt.
+ * The function will be retried once for each entry in the delays array.
+ * 
+ * @param fn The function to execute
+ * @param delays An array of millisecond timings for each delay before retrying
+ */
+export async function retry<T>(fn: () => T | Promise<T>, delays: number[]): Promise<T> {
+    try {
+        return await fn();
+    } catch (e) {
+        if (delays.length === 0) {
+            throw e;
+        }
+        console.log("RETRY", new Date(), delays[0]);
+        await delay(delays[0]);
+        return await retry(fn, delays.slice(1));
+    }
+}
+
 export function dataToHex(data: Uint8Array): string {
     function byteToHex(byte: number): string {
         return byte.toString(16).padStart(2, "0");
