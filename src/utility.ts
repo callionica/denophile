@@ -40,7 +40,12 @@ export async function retry<T>(fn: () => T | Promise<T>, delays: number[]): Prom
  * 
  * Note that this function does _not_ ensure that any 2 calls to the function have a
  * minimum delay between them. It deliberately allows bursty calls while preventing
- * too many calls over the long term.
+ * too many calls over the long term. A "large gap reset" means that it never gets 
+ * too bursty.
+ * 
+ * The large gap reset means that if the function falls behind by
+ * 10 times the average desired gap, the tracked statistics are reset and throttling
+ * acts like the function has been called for the first time.
  * 
  * @param fn The function to be wrapped.
  * @param delayMS The average delay in milliseconds between calls to the function.
@@ -52,18 +57,28 @@ export function throttle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => Promise<ReturnType<T>> {
     let count = 0;
     let first: number | undefined;
+
     async function fn_(...args: Parameters<T>): Promise<ReturnType<T>> {
+        const now = Date.now();
+
         ++count;
         if (first === undefined) {
             first = Date.now();
         }
-        const now = Date.now();
+
         const elapsed = now - first;
         const desiredElapsed = (count - 1) * delayMS;
         const currentDelay = desiredElapsed - elapsed;
         if (currentDelay > 0) {
             await delay(currentDelay);
+        } else if ((-currentDelay) > (10 * delayMS)) {
+            // We're running a lot slower than expected
+            // To ensure that we don't suddenly produce a massive burst
+            // in an attempt to catch up, reset all the statistics
+            count = 0;
+            first = undefined;
         }
+
         return (await fn(...args)) as ReturnType<T>;
     }
     return fn_;
