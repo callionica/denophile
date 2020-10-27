@@ -32,6 +32,43 @@ export async function retry<T>(fn: () => T | Promise<T>, delays: number[]): Prom
     }
 }
 
+/**
+ * Helps to ensure that a function cannot be called too frequently over the long term.
+ * It does this by returning a new function that will delay the call to the inner function
+ * by the necessary amount based on how many previous calls there have been and how much time 
+ * has elapsed since the first call.
+ * 
+ * Note that this function does _not_ ensure that any 2 calls to the function have a
+ * minimum delay between them. It deliberately allows bursty calls while preventing
+ * too many calls over the long term.
+ * 
+ * @param fn The function to be wrapped.
+ * @param delayMS The average delay in milliseconds between calls to the function.
+ */
+// deno-lint-ignore no-explicit-any
+export function throttle<T extends (...args: any[]) => any>(
+    fn: T,
+    delayMS: number
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+    let count = 0;
+    let first: number | undefined;
+    async function fn_(...args: Parameters<T>): Promise<ReturnType<T>> {
+        ++count;
+        if (first === undefined) {
+            first = Date.now();
+        }
+        const now = Date.now();
+        const elapsed = now - first;
+        const desiredElapsed = (count - 1) * delayMS;
+        const currentDelay = desiredElapsed - elapsed;
+        if (currentDelay > 0) {
+            await delay(currentDelay);
+        }
+        return (await fn(...args)) as ReturnType<T>;
+    }
+    return fn_;
+}
+
 export function dataToHex(data: Uint8Array): string {
     function byteToHex(byte: number): string {
         return byte.toString(16).padStart(2, "0");
