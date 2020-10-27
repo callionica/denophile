@@ -75,8 +75,8 @@ export function throttle<T extends (...args: any[]) => any>(
             // We're running a lot slower than expected
             // To ensure that we don't suddenly produce a massive burst
             // in an attempt to catch up, reset all the statistics
-            count = 0;
-            first = undefined;
+            count = 1;
+            first = now;
         }
 
         return (await fn(...args)) as ReturnType<T>;
