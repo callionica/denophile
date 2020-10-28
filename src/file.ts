@@ -32,6 +32,26 @@ export async function execute(command: string, ...commandArguments: string[]): P
     return new TextDecoder().decode(await p.output());
 }
 
+export async function spawn(command: string, ...commandArguments: string[]): Promise<boolean> {
+    const p = Deno.run({
+        cmd: [command, ...commandArguments]
+    });
+
+    // Wait for process to finish
+    const { success } = await p.status();
+
+    return success;
+}
+
+export async function respawn(command: string, ...commandArguments: string[]): Promise<void> {
+    while (true) {
+        const success = await spawn(command, ...commandArguments);
+        if (success) {
+            return;
+        }
+    }
+}
+
 export async function cat(input: { source: FilePath, destination: FilePath }) {
     for await (const chunk of readRanges(input.source, { length: 4 * 1024 })) {
         await writeFile(input.destination, chunk, { append: true });
