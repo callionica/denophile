@@ -20,16 +20,23 @@ export async function execute(command: string, ...commandArguments: string[]): P
         stderr: "piped",
     });
 
-    // Wait for process to finish
-    const { success } = await p.status();
+    try {
+        // Wait for process to finish
+        const { success } = await p.status();
 
-    if (!success) {
-        const message = new TextDecoder().decode(await p.stderrOutput());
-        throw `${message}`;
+        if (!success) {
+            const message = new TextDecoder().decode(await p.stderrOutput());
+            throw `${message}`;
+        }
+
+        // Return the output
+        return new TextDecoder().decode(await p.output());
+    } finally {
+        p.stderr?.close();
+        p.close();
+        // console.log(Deno.resources());
     }
 
-    // Return the output
-    return new TextDecoder().decode(await p.output());
 }
 
 export async function spawn(command: string, ...commandArguments: string[]): Promise<boolean> {
@@ -37,10 +44,13 @@ export async function spawn(command: string, ...commandArguments: string[]): Pro
         cmd: [command, ...commandArguments]
     });
 
-    // Wait for process to finish
-    const { success } = await p.status();
-
-    return success;
+    try {
+        // Wait for process to finish
+        const { success } = await p.status();
+        return success;
+    } finally {
+        p.close();
+    }
 }
 
 export async function respawn(command: string, ...commandArguments: string[]): Promise<void> {
