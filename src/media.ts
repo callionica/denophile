@@ -183,7 +183,7 @@ const standardDataExtractors = (function () {
     const number = (capture: keyof Data) => grp(`0{0,4}`, cap(capture)(`\\d{1,4}(?=\\D|$)`));
 
     const numberSeparator = alt(separator, grp(period, ws), ws);
-    const number_prefix = (capture: keyof Data) => grp(number(capture), numberSeparator);
+    const numberPrefix = (capture: keyof Data) => grp(number(capture), numberSeparator);
 
     const dd = alt(`[0][123456789]`, `[1][0123456789]`, `[2][0123456789]`, `[3][01]`);
     const mm = alt(`[0][123456789]`, `[1][012]`);
@@ -739,17 +739,47 @@ export async function getMediaGroups(primaries: Iterable<MediaPrimary>): Promise
         group.urlName = toURLName(group.name);
 
         group.files.sort((a, b) => {
+            const AB = -1;
+            const BA = 1;
 
             // A 'grouped' item goes before a 'contained' item
             if ((a.containerFolder === undefined) && (b.containerFolder !== undefined)) {
-                return -1;
+                return AB;
             }
 
             if ((a.containerFolder !== undefined) && (b.containerFolder === undefined)) {
-                return 1;
+                return BA;
             }
 
-            // PERF: Could do property-level sorting, but this is probably OK
+            function hasSubgroupNumber(primary: MediaPrimary): boolean {
+                return primary.info.subgroupNumber !== undefined;
+            }
+
+            // Property-based sorting
+            if (a.info.group === b.info.group) {
+                // Numbered subgroups go before unnumbered subgroups
+                if (!hasSubgroupNumber(a) && hasSubgroupNumber(b)) {
+                    return BA;
+                }
+
+                if (hasSubgroupNumber(a) && !hasSubgroupNumber(b)) {
+                    return AB;
+                }
+
+                // Numbered subgroups go in number order
+                if (hasSubgroupNumber(a) && hasSubgroupNumber(b)) {
+                    const aSN = parseInt(a.info.subgroupNumber!, 10);
+                    const bSN = parseInt(b.info.subgroupNumber!, 10);
+
+                    if (aSN < bSN) {
+                        return AB;
+                    }
+
+                    if (bSN < aSN) {
+                        return BA;
+                    }
+                }
+            }
 
             // Otherwise compare the standard name (in its sortable form)
             return a.sortableName.localeCompare(b.sortableName, "en", { numeric: true });
