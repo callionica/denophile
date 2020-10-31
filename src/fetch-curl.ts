@@ -5,6 +5,17 @@ import { FilePath, execute, toFilePath, toFileURL, readTextFile } from "./file.t
 
 const cache = toFileURL("/Users/user/Desktop/__current"); // TODO
 
+type ResolvedName = {
+    name: string,
+    port?: number, // defaults to 443
+    ip: string
+};
+
+type HttpClient = {
+    caFile?: string,
+    resolvedNames?: ResolvedName[],
+};
+
 class Response {
     requestURL: URL;
     responseURL: URL;
@@ -26,7 +37,7 @@ class Response {
     }
 }
 
-export async function fetch(url: URL | string): Promise<Response> {
+export async function fetch(url: URL | string, options?: { method?: string, body?: string, client?: HttpClient }): Promise<Response> {
     const requestURL = (url instanceof URL) ? url : new URL(url);
 
     async function readExtendedAttribute(attribute: string, source: FilePath): Promise<string> {
@@ -52,8 +63,8 @@ export async function fetch(url: URL | string): Promise<Response> {
         const WRITE_EXTENDED_ATTRIBUTES = "--xattr";
         const FOLLOW_REDIRECTS = "-L";
         const SKIP_CERTIFICATE_CHECKS = "--insecure";
-        
-        const flags = [
+
+        const flags: string[] = [
             SKIP_CERTIFICATE_CHECKS
         ];
 
@@ -61,14 +72,21 @@ export async function fetch(url: URL | string): Promise<Response> {
             console.log("WARNING: Skipping certificate checks");
         }
 
+        const resolves = (
+            options?.client?.resolvedNames?.flatMap(rn => ["--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`])
+        ) || [];
+
+        const cert = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
+
         await execute(
             "curl",
             WRITE_EXTENDED_ATTRIBUTES,
             FOLLOW_REDIRECTS,
+            ...cert,
+            ...resolves,
+            ...flags,
             "-A", agent,
             "-o", toFilePath(destination),
-            // "--cacert", "/Users/user/Documents/github/hue/hue.pem", // TODO
-            ...flags,
             url.toString()
         );
 
