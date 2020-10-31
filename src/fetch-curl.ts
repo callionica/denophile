@@ -1,9 +1,9 @@
-// A comical implementation of the fetch API built on top of curl
-// Currently will leak disk space!!!! Hard-coded directories!!!!
+// A comical implementation of a small part of the fetch API built on top of curl
+// Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
-import { FilePath, execute, toFilePath, readTextFile } from "./file.ts";
+import { FilePath, execute, toFilePath, toFileURL, readTextFile } from "./file.ts";
 
-const cache = new URL("/Users/user/Desktop/__current"); // TODO
+const cache = toFileURL("/Users/user/Desktop/__current"); // TODO
 
 class Response {
     requestURL: URL;
@@ -21,12 +21,12 @@ class Response {
     }
 
     // deno-lint-ignore no-explicit-any
-    async json() : Promise<any> {
+    async json(): Promise<any> {
         return JSON.parse(await this.text());
     }
 }
 
-export async function fetch(url: URL | string) : Promise<Response> {
+export async function fetch(url: URL | string): Promise<Response> {
     const requestURL = (url instanceof URL) ? url : new URL(url);
 
     async function readExtendedAttribute(attribute: string, source: FilePath): Promise<string> {
@@ -49,12 +49,26 @@ export async function fetch(url: URL | string) : Promise<Response> {
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
+        const WRITE_EXTENDED_ATTRIBUTES = "--xattr";
+        const FOLLOW_REDIRECTS = "-L";
+        const SKIP_CERTIFICATE_CHECKS = "--insecure";
+        
+        const flags = [
+            SKIP_CERTIFICATE_CHECKS
+        ];
+
+        if (flags.includes(SKIP_CERTIFICATE_CHECKS)) {
+            console.log("WARNING: Skipping certificate checks");
+        }
+
         await execute(
             "curl",
-            "--xattr",
-            "-L",
+            WRITE_EXTENDED_ATTRIBUTES,
+            FOLLOW_REDIRECTS,
             "-A", agent,
             "-o", toFilePath(destination),
+            // "--cacert", "/Users/user/Documents/github/hue/hue.pem", // TODO
+            ...flags,
             url.toString()
         );
 
