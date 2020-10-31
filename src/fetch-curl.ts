@@ -60,6 +60,14 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
+        const METHOD: Record<string, string[]> = {
+            GET: ["--get"],
+            HEAD: ["--head"],
+            POST: ["-d", options?.body || ""],
+        };
+
+        const methodArgs = METHOD[options?.method || "GET"] || ["-X", options!.method];
+
         const WRITE_EXTENDED_ATTRIBUTES = "--xattr";
         const FOLLOW_REDIRECTS = "-L";
         const SKIP_CERTIFICATE_CHECKS = "--insecure";
@@ -72,21 +80,22 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             console.log("WARNING: Skipping certificate checks");
         }
 
-        const resolves = (
+        const resolveArgs = (
             options?.client?.resolvedNames?.flatMap(rn => ["--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`])
         ) || [];
 
-        const cert = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
+        const certArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
 
         await execute(
             "curl",
+            ...methodArgs,
             WRITE_EXTENDED_ATTRIBUTES,
             FOLLOW_REDIRECTS,
-            ...cert,
-            ...resolves,
+            ...certArgs,
+            ...resolveArgs,
             ...flags,
             "-A", agent,
-            "-o", toFilePath(destination),
+            "--create-dirs", "-o", toFilePath(destination),
             url.toString()
         );
 
