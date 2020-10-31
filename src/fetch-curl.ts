@@ -81,8 +81,9 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         }
 
         const resolveArgs = (
-            options?.client?.resolvedNames?.flatMap(rn => ["--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`])
-        ) || [];
+            options?.client?.resolvedNames?.flatMap(rn => [
+                "--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`
+            ])) || [];
 
         const certArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
 
