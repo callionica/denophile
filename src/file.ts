@@ -26,15 +26,16 @@ export async function execute(command: string, ...commandArguments: string[]): P
 
         if (!success) {
             const message = new TextDecoder().decode(await p.stderrOutput());
-            throw `${message}`;
+            throw new Error(message);
         }
+
+        // Close stderr if not already closed in the failure case
+        p.stderr?.close();
 
         // Return the output
         return new TextDecoder().decode(await p.output());
     } finally {
-        p.stderr?.close();
         p.close();
-        // console.log(Deno.resources());
     }
 
 }
