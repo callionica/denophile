@@ -1,10 +1,7 @@
 import { directoryEntries, fileName, toFileURL } from "./file.ts";
 import { arrayFrom } from "./utility.ts";
-import { fetch } from "./file.ts";
-// const denoFetch = fetch;
 
 Deno.test("fetch", async function () {
-    // console.log(fileFetch === denoFetch);
     const r = await fetch("https://doc.deno.land/builtin/stable#fetch");
     console.log(await r.text());
 });

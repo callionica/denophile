@@ -12,15 +12,9 @@ type DenoPlus = { fetch: typeof globalThis.fetch };
 const deno: DenoPlus = (() => {
     const fetch = globalThis.fetch;
 
-    const deno: DenoPlus = { fetch };
+    globalThis.fetch = fetch_;
 
-    async function neverFetch(): Promise<Response> {
-        throw new Error(`FATAL ERROR: Missing 'import { fetch } from "file.ts"'`);
-    }
-
-    globalThis.fetch = neverFetch;
-
-    return deno;
+    return { fetch };
 })();
 
 function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Response> {
