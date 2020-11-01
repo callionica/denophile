@@ -5,6 +5,21 @@ import { generable } from "./utility.ts";
 // Callionica's minimal API for accessing the file system built on top of Deno's built-in, low-level file API
 // Scroll past the code for more detailed documentation.
 
+const denoFetch = fetch;
+
+export function fetch(input: Request | URL | string, init?: RequestInit): Promise<Response> {
+    const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
+
+    const headers = new Headers(init?.headers || {});
+    if (!headers.has("User-Agent")) {
+        headers.set("User-Agent", agent);
+    }
+
+    const init_ = { ...(init || {}), headers };
+
+    return denoFetch(input, init_);
+}
+
 /**
  * Executes an application and returns the output if successful
  * or throws an error on failure.
