@@ -5,7 +5,17 @@ import { generable } from "./utility.ts";
 // Callionica's minimal API for accessing the file system built on top of Deno's built-in, low-level file API
 // Scroll past the code for more detailed documentation.
 
-const denoFetch = fetch;
+// We clobber global `fetch` so that we can't call it accidentally
+
+async function neverFetch(): Promise<Response>{
+    throw new Error(`FATAL ERROR: Missing 'import { fetch } from "file.ts"'`);
+}
+
+const globalFetch = (() => {
+    const result = globalThis.fetch;
+    globalThis.fetch = neverFetch;
+    return result;
+})();
 
 function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Response> {
     const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
@@ -17,7 +27,7 @@ function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Resp
 
     const init_ = { ...(init || {}), headers };
 
-    return denoFetch(input, init_);
+    return globalFetch(input, init_);
 }
 
 export { fetch_ as fetch };
