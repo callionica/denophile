@@ -7,14 +7,20 @@ import { generable } from "./utility.ts";
 
 // We clobber global `fetch` so that we can't call it accidentally
 
-async function neverFetch(): Promise<Response>{
-    throw new Error(`FATAL ERROR: Missing 'import { fetch } from "file.ts"'`);
-}
+type DenoPlus = { fetch: typeof globalThis.fetch };
 
-const globalFetch = (() => {
-    const result = globalThis.fetch;
+const deno: DenoPlus = (() => {
+    const fetch = globalThis.fetch;
+
+    const deno: DenoPlus = { fetch };
+
+    async function neverFetch(): Promise<Response> {
+        throw new Error(`FATAL ERROR: Missing 'import { fetch } from "file.ts"'`);
+    }
+
     globalThis.fetch = neverFetch;
-    return result;
+
+    return deno;
 })();
 
 function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Response> {
@@ -27,7 +33,7 @@ function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Resp
 
     const init_ = { ...(init || {}), headers };
 
-    return globalFetch(input, init_);
+    return deno.fetch(input, init_);
 }
 
 export { fetch_ as fetch };
