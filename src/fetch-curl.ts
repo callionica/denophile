@@ -3,7 +3,7 @@
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile } from "./file.ts";
 
-const cache = toFileURL("/Users/user/Desktop/__current"); // TODO
+const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
 type ResolvedName = {
     name: string,
@@ -85,14 +85,14 @@ export async function fetch(url: URL | string, options?: { method?: string, body
                 "--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`
             ])) || [];
 
-        const certArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
+        const certificateArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
 
         await execute(
             "curl",
             ...methodArgs,
             WRITE_EXTENDED_ATTRIBUTES,
             FOLLOW_REDIRECTS,
-            ...certArgs,
+            ...certificateArgs,
             ...resolveArgs,
             ...flags,
             "-A", agent,
@@ -105,7 +105,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
     }
 
     const unique = await execute("uuidgen");
-    const localURL = new URL(unique, cache);
+    const localURL = new URL(unique, cacheFolder);
     const responseURL = await downloadFile(requestURL, localURL);
     return new Response(requestURL, responseURL, localURL);
 }
