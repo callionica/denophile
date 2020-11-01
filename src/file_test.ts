@@ -1,5 +1,13 @@
 import { directoryEntries, fileName, toFileURL } from "./file.ts";
 import { arrayFrom } from "./utility.ts";
+import { fetch as fileFetch } from "./file.ts";
+const denoFetch = fetch;
+
+Deno.test("fetch", async function () {
+    console.log(fileFetch === denoFetch);
+    const r = await fileFetch("https://doc.deno.land/builtin/stable#fetch");
+    console.log(await r.text());
+});
 
 Deno.test("directoryEntries", async function () {
     const d = "/Volumes/C430/TV/Would I Lie to You?/";

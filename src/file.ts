@@ -7,7 +7,7 @@ import { generable } from "./utility.ts";
 
 const denoFetch = fetch;
 
-export function fetch(input: Request | URL | string, init?: RequestInit): Promise<Response> {
+function fetch_(input: Request | URL | string, init?: RequestInit): Promise<Response> {
     const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
     const headers = new Headers(init?.headers || {});
@@ -19,6 +19,8 @@ export function fetch(input: Request | URL | string, init?: RequestInit): Promis
 
     return denoFetch(input, init_);
 }
+
+export { fetch_ as fetch };
 
 /**
  * Executes an application and returns the output if successful
@@ -606,7 +608,7 @@ export async function fetchToFile(
     options: { extensionFromContentType: boolean } = { extensionFromContentType: true }
 ): Promise<URL> {
 
-    const response = await fetch(url);
+    const response = await fetch_(url);
     let ext = extension;
     if (options.extensionFromContentType) {
         const mimeType = getMimeType(response);
