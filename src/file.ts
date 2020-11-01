@@ -174,6 +174,16 @@ export async function makeDirectory(filePath: FilePath): Promise<void> {
     return Deno.mkdir(adaptFilePath(filePath), { recursive: true });
 }
 
+/** Renames/moves oldPath to newPath */
+export async function rename(oldPath: FilePath, newPath: FilePath): Promise<void> {
+    return Deno.rename(toFilePath(oldPath), toFilePath(newPath));
+}
+
+/** Removes/deletes a file or folder */
+export async function remove(filePath: FilePath): Promise<void> {
+    return Deno.remove(adaptFilePath(filePath));
+}
+
 /** Opens a file */
 export async function open(filePath: FilePath): Promise<File> {
     return await Deno.open(adaptFilePath(filePath)) as unknown as File;
