@@ -1,9 +1,12 @@
 import { directoryEntries, fileName, toFileURL } from "./file.ts";
 import { arrayFrom } from "./utility.ts";
+import { fetch as fileFetch } from "./file.ts";
 
 Deno.test("fetch", async function () {
-    const r = await fetch("https://doc.deno.land/builtin/stable#fetch");
-    console.log(await r.text());
+    if (fileFetch !== fetch) {
+        throw "fetch replacement has failed";
+    }
+    console.log("fetch replacement has succeeded");
 });
 
 Deno.test("directoryEntries", async function () {
