@@ -1,4 +1,4 @@
-import { writeTextFile, FilePath, toFileURL, exists } from "../../file.ts";
+import { writeTextFile, FilePath, toFileURL, exists, makeDirectory } from "../../file.ts";
 import { srt2vtt, ttml2vtt } from "../../subtitle.ts";
 import { loadEntry } from "../../junction.ts";
 import { getMediaGroups, MediaGroup, MediaPrimary } from "../../media.ts";
@@ -49,7 +49,7 @@ async function getOrConvertWebVTTs(primary: MediaPrimary, destinationFolder: Fil
 async function writeVideoPage(mediaGroup: MediaGroup, file: MediaPrimary) {
 
     const pageLocation = destination + `${mediaGroup.urlName}/${file.urlName}/`;
-    await Deno.mkdir(pageLocation, { recursive: true });
+    await makeDirectory(pageLocation);
 
     const subtitles = await getOrConvertWebVTTs(file, pageLocation);
 
@@ -61,7 +61,7 @@ async function writeVideoPage(mediaGroup: MediaGroup, file: MediaPrimary) {
 {
     const pageLocation = destination;
     console.log(pageLocation);
-    await Deno.mkdir(pageLocation, { recursive: true });
+    await makeDirectory(pageLocation);
 
     const page = pageGroups(mediaGroups);
     // console.log(page);
@@ -73,7 +73,7 @@ for (const mediaGroup of mediaGroups) {
 
     const pageLocation = destination + mediaGroup.urlName + "/";
     console.log(pageLocation);
-    await Deno.mkdir(pageLocation, { recursive: true });
+    await makeDirectory(pageLocation);
 
     const page = pageGroup(mediaGroup);
     // console.log(page);
