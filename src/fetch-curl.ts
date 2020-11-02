@@ -5,30 +5,42 @@ import { FilePath, execute, toFilePath, toFileURL, readTextFile } from "./file.t
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
-type ResolvedName = {
-    name: string,
-    port?: number, // defaults to 443
-    ip: string
-};
+type IPAddress = string;
+
+type DynamicNameResolver = { resolve(name: string): IPAddress };
+type NameResolver = Record<string, IPAddress> | DynamicNameResolver;
+
+function isDynamicNameResolver(x: unknown): x is DynamicNameResolver {
+    // deno-lint-ignore no-explicit-any
+    return (x as any).resolve !== undefined; // TODO
+}
+
+// type ResolvedName = {
+//     name: string,
+//     port?: number, // defaults to 443
+//     ip: string
+// };
 
 type HttpClient = {
     caFile?: string,
-    resolvedNames?: ResolvedName[],
+    nameResolver?: NameResolver;
 };
 
 class Response {
     requestURL: URL;
     responseURL: URL;
-    localURL: URL;
+    bodyURL: URL;
+    headerURL: URL;
 
-    constructor(requestURL: URL, responseURL: URL, localURL: URL) {
+    constructor(requestURL: URL, responseURL: URL, bodyURL: URL, headerURL: URL) {
         this.requestURL = requestURL;
         this.responseURL = responseURL;
-        this.localURL = localURL;
+        this.bodyURL = bodyURL;
+        this.headerURL = headerURL;
     }
 
     text(): Promise<string> {
-        return readTextFile(this.localURL); // TODO - size limited
+        return readTextFile(this.bodyURL); // TODO - size limited
     }
 
     // deno-lint-ignore no-explicit-any
@@ -53,7 +65,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
     /**
      * Download a URL to a specified file and return the resolved URL after following redirects
      */
-    async function downloadFile(url: URL, destination: URL): Promise<URL> {
+    async function downloadFile(url: URL, destinationBody: URL, destinationHeader: URL): Promise<URL> {
         // -L tells curl to follow redirects
         // -A tells curl what user agent header to send
         // -o tells curl where to output the data
@@ -80,10 +92,22 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             console.log("WARNING: Skipping certificate checks");
         }
 
-        const resolveArgs = (
-            options?.client?.resolvedNames?.flatMap(rn => [
-                "--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`
-            ])) || [];
+        let resolveArgs: string[] = [];
+        if (options?.client?.nameResolver) {
+            const nameResolver = options.client.nameResolver;
+            const name = url.hostname;
+            const ip = isDynamicNameResolver(nameResolver) ? nameResolver.resolve(name) : nameResolver[name];
+            const ports: Record<string, number> = { http: 80, https: 443 };
+            const port = url.port || ports[url.protocol] || 443;
+            if (ip !== undefined) {
+                resolveArgs = ["--resolve", `${name}:${port}:${ip}`];
+            }
+        }
+
+        // const resolveArgs = (
+        //     options?.client?.resolvedNames?.flatMap(rn => [
+        //         "--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`
+        //     ])) || [];
 
         const certificateArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
 
@@ -96,16 +120,18 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             ...resolveArgs,
             ...flags,
             "-A", agent,
-            "--create-dirs", "-o", toFilePath(destination),
+            "--create-dirs",
+            "-o", toFilePath(destinationBody),
+            "--dump-header", toFilePath(destinationHeader),
             url.toString()
         );
 
-        const location = await readExtendedAttribute("user.xdg.origin.url", destination);
+        const location = await readExtendedAttribute("user.xdg.origin.url", destinationBody);
         return new URL(location);
     }
 
-    const unique = await execute("uuidgen");
-    const localURL = new URL(unique, cacheFolder);
-    const responseURL = await downloadFile(requestURL, localURL);
-    return new Response(requestURL, responseURL, localURL);
+    const bodyURL = new URL(await execute("uuidgen"), cacheFolder);
+    const headerURL = new URL(await execute("uuidgen"), cacheFolder);
+    const responseURL = await downloadFile(requestURL, bodyURL, headerURL);
+    return new Response(requestURL, responseURL, bodyURL, headerURL);
 }
