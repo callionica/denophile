@@ -60,7 +60,7 @@ export async function execute(command: string, ...commandArguments: string[]): P
         p.stderr?.close();
 
         // Return the output
-        return new TextDecoder().decode(await p.output());
+        return new TextDecoder().decode(await p.output()).trimEnd();
     } finally {
         p.close();
     }
