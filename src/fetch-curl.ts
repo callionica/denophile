@@ -2,39 +2,9 @@
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
-import { Pin, SSL } from "./ssl.ts";
+import { Pin, CertificateUtility, CertificateLibrary, Certificate } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
-
-class CertificateLibrary {
-    folder: URL;
-
-    constructor(folder: URL) {
-        this.folder = folder;
-    }
-
-    async getCertificate(url: URL): Promise<URL> {
-        const name = url.hostname;
-        const file = new URL(`${name}.pem`, this.folder);
-        if (!(await exists(file))) {
-            // TODO - download
-            const ssl = new SSL();
-            const certificate = await ssl.fetchCertificate(url);
-            const tempFile = new URL(`${name}.pem.download`, this.folder);
-            await writeTextFile(tempFile, certificate);
-            const subject = await ssl.getSubject(tempFile);
-            if (subject.CN === name) {
-                await rename(tempFile, file);
-            }
-        }
-        return file;
-    }
-
-    async getPin(url: URL): Promise<Pin> {
-        const file = await this.getCertificate(url);
-        return await new SSL().getPin(file);
-    }
-}
 
 type IPAddress = string;
 
@@ -45,20 +15,11 @@ function isDynamicNameResolver(x: unknown): x is DynamicNameResolver {
     return (x as DynamicNameResolver).resolve !== undefined; // TODO
 }
 
-await function resolve(url: URL, nameResolver?: NameResolver) {
-    if (nameResolver === undefined) {
-        return url;
-    }
-
-    if (isDynamicNameResolver(nameResolver)) {
-        const ip = nameResolver.resolve(url.hostname);
-    }
-}
-
 type HttpClient = {
     skipVerifyingCertificateChain?: boolean,
     caFile?: string,
     nameResolver?: NameResolver;
+    library?: CertificateLibrary;
 };
 
 class Response {
@@ -106,6 +67,9 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // -o tells curl where to output the data
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
+
+        const pin = await options?.client?.library?.getPin(url);
+        const pinArgs: string[] = (pin !== undefined) ? ["--pinnedpubkey", pin] : [];
 
         const METHOD: Record<string, string[]> = {
             GET: ["--get"],
@@ -155,6 +119,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             WRITE_EXTENDED_ATTRIBUTES,
             FOLLOW_REDIRECTS,
             ...certificateArgs,
+            ...pinArgs,
             ...resolveArgs,
             ...flags,
             "-A", agent,
