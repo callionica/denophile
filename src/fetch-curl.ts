@@ -1,27 +1,62 @@
 // A comical implementation of a small part of the fetch API built on top of curl
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
-import { FilePath, execute, toFilePath, toFileURL, readTextFile } from "./file.ts";
+import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
+import { Pin, SSL } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
+class CertificateLibrary {
+    folder: URL;
+
+    constructor(folder: URL) {
+        this.folder = folder;
+    }
+
+    async getCertificate(url: URL): Promise<URL> {
+        const name = url.hostname;
+        const file = new URL(`${name}.pem`, this.folder);
+        if (!(await exists(file))) {
+            // TODO - download
+            const ssl = new SSL();
+            const certificate = await ssl.fetchCertificate(url);
+            const tempFile = new URL(`${name}.pem.download`, this.folder);
+            await writeTextFile(tempFile, certificate);
+            const subject = await ssl.getSubject(tempFile);
+            if (subject.CN === name) {
+                await rename(tempFile, file);
+            }
+        }
+        return file;
+    }
+
+    async getPin(url: URL): Promise<Pin> {
+        const file = await this.getCertificate(url);
+        return await new SSL().getPin(file);
+    }
+}
+
 type IPAddress = string;
 
-type DynamicNameResolver = { resolve(name: string): IPAddress };
+type DynamicNameResolver = { resolve(name: string): Promise<IPAddress | undefined> };
 type NameResolver = Record<string, IPAddress> | DynamicNameResolver;
 
 function isDynamicNameResolver(x: unknown): x is DynamicNameResolver {
-    // deno-lint-ignore no-explicit-any
-    return (x as any).resolve !== undefined; // TODO
+    return (x as DynamicNameResolver).resolve !== undefined; // TODO
 }
 
-// type ResolvedName = {
-//     name: string,
-//     port?: number, // defaults to 443
-//     ip: string
-// };
+await function resolve(url: URL, nameResolver?: NameResolver) {
+    if (nameResolver === undefined) {
+        return url;
+    }
+
+    if (isDynamicNameResolver(nameResolver)) {
+        const ip = nameResolver.resolve(url.hostname);
+    }
+}
 
 type HttpClient = {
+    skipVerifyingCertificateChain?: boolean,
     caFile?: string,
     nameResolver?: NameResolver;
 };
@@ -82,32 +117,35 @@ export async function fetch(url: URL | string, options?: { method?: string, body
 
         const WRITE_EXTENDED_ATTRIBUTES = "--xattr";
         const FOLLOW_REDIRECTS = "-L";
-        const SKIP_CERTIFICATE_CHECKS = "--insecure";
+        const SKIP_VERIFYING_CERTIFICATE_CHAIN = "--insecure";
 
-        const flags: string[] = [
-            SKIP_CERTIFICATE_CHECKS
-        ];
+        const flags: string[] = options?.client?.skipVerifyingCertificateChain ? [
+            SKIP_VERIFYING_CERTIFICATE_CHAIN
+        ] : [];
 
-        if (flags.includes(SKIP_CERTIFICATE_CHECKS)) {
-            console.log("WARNING: Skipping certificate checks");
+        if (flags.includes(SKIP_VERIFYING_CERTIFICATE_CHAIN)) {
+            console.log("WARNING: Skipping verifying certificate chain (--insecure)");
         }
 
         let resolveArgs: string[] = [];
         if (options?.client?.nameResolver) {
             const nameResolver = options.client.nameResolver;
             const name = url.hostname;
-            const ip = isDynamicNameResolver(nameResolver) ? nameResolver.resolve(name) : nameResolver[name];
             const ports: Record<string, number> = { http: 80, https: 443 };
             const port = url.port || ports[url.protocol] || 443;
-            if (ip !== undefined) {
-                resolveArgs = ["--resolve", `${name}:${port}:${ip}`];
+
+            if (isDynamicNameResolver(nameResolver)) {
+                // TODO - dynamic resolver only gets to see the first name
+                const ip = await nameResolver.resolve(name);
+                if (ip !== undefined) {
+                    resolveArgs = ["--resolve", `${name}:${port}:${ip}`];
+                }
+            } else {
+                resolveArgs = Object.entries(nameResolver).flatMap(([name, ip]) => [
+                    "--resolve", `${name}:${port}:${ip}`
+                ]);
             }
         }
-
-        // const resolveArgs = (
-        //     options?.client?.resolvedNames?.flatMap(rn => [
-        //         "--resolve", `${rn.name}:${rn.port || 443}:${rn.ip}`
-        //     ])) || [];
 
         const certificateArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
 
@@ -130,8 +168,9 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         return new URL(location);
     }
 
-    const bodyURL = new URL(await execute("uuidgen"), cacheFolder);
-    const headerURL = new URL(await execute("uuidgen"), cacheFolder);
+    const unique = await execute("uuidgen");
+    const bodyURL = new URL(unique + "-body.txt", cacheFolder);
+    const headerURL = new URL(unique + "-header.txt", cacheFolder);
     const responseURL = await downloadFile(requestURL, bodyURL, headerURL);
     return new Response(requestURL, responseURL, bodyURL, headerURL);
 }
