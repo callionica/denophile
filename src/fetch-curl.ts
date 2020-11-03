@@ -69,7 +69,8 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
         const pin = await options?.client?.certificateLibrary?.getPin(url);
-        const pinArgs: string[] = (pin !== undefined) ? ["--pinnedpubkey", pin] : [];
+        const pins = (pin !== undefined) ? [pin] : [];
+        const pinArgs = (pins.length === 0) ? [] : ["--pinnedpubkey", pins.map(pin => `sha256//${pin}`).join(";")];
 
         const METHOD: Record<string, string[]> = {
             GET: ["--get"],
