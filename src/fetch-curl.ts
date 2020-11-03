@@ -19,7 +19,7 @@ type HttpClient = {
     skipVerifyingCertificateChain?: boolean,
     caFile?: string,
     nameResolver?: NameResolver;
-    library?: CertificateLibrary;
+    certificateLibrary?: CertificateLibrary;
 };
 
 class Response {
@@ -68,7 +68,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
-        const pin = await options?.client?.library?.getPin(url);
+        const pin = await options?.client?.certificateLibrary?.getPin(url);
         const pinArgs: string[] = (pin !== undefined) ? ["--pinnedpubkey", pin] : [];
 
         const METHOD: Record<string, string[]> = {

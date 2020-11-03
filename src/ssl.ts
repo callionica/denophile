@@ -130,6 +130,12 @@ export class CertificateLibrary {
         return file;
     }
 
+    /**
+     * Returns the pin hash for the specified server
+     * by calling getCertificate and then calculating the hash.
+     * 
+     * If the certificate is not available, it will be downloaded and verified.
+     */
     async getPin(url: URL): Promise<Pin> {
         const file = await this.getCertificate(url);
         return await this.utility.getPin(file);
