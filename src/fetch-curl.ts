@@ -16,8 +16,8 @@ function isDynamicNameResolver(x: unknown): x is DynamicNameResolver {
 }
 
 type HttpClient = {
-    skipVerifyingCertificateChain?: boolean,
     caFile?: string,
+    skipVerifyingCertificateChain?: boolean,
     nameResolver?: NameResolver;
     certificateLibrary?: CertificateLibrary;
 };

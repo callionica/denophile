@@ -1,4 +1,4 @@
-import { execute, exists, FilePath, rename, toFilePath, toFileURL, writeTextFile } from "./file.ts";
+import { execute, exists, FilePath, makeDirectory, rename, toFilePath, toFileURL, writeTextFile } from "./file.ts";
 
 export type Certificate = string & { kind_: "Certificate" };
 export type Pin = string & { kind_: "Pin" };
@@ -83,6 +83,7 @@ export class CertificateLibrary {
     constructor(folder: FilePath) {
         this.utility = new CertificateUtility();
         this.folder = toFileURL(folder);
+        makeDirectory(this.folder);
     }
 
     /** Override to provide custom DNS - for example, switch the hostname for an IP address */
@@ -125,6 +126,7 @@ export class CertificateLibrary {
             const tempFile = new URL(`${name}.pem.download`, this.folder);
             await writeTextFile(tempFile, certificate);
             await this.verify(tempFile, name);
+            // TODO - clean up temp file on failure
             await rename(tempFile, file);
         }
         return file;
