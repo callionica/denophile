@@ -14,6 +14,21 @@ export class SSL {
         return execute("bash", "-c", pipeline.join(" | "));
     }
 
+    async getSubject(file: FilePath): Promise<Record<string, string | undefined>> {
+        const path = toFilePath(file);
+        const result = await this.exec([
+            `openssl x509 -in  "${path}" -noout -subject -nameopt RFC2253`
+        ]);
+
+        const prefix = "subject= ";
+        const subject = result.startsWith(prefix) ? result.substring(prefix.length) : result;
+
+        // TODO - can't parse like this!!!
+        const values = subject.split(",");
+        const nameValues = values.map(v => v.split("="));
+        return Object.fromEntries(nameValues);
+    }
+
     getPin(file: FilePath): Promise<Pin> {
         const path = toFilePath(file);
         const PUBLIC_KEY_READ = `openssl x509 -pubkey -noout -in "${path}"`;
@@ -65,29 +80,4 @@ export class SSL {
 
         return this.exec(commands) as Promise<Certificate>;
     }
-
-    // const certificate = await (this.exec(commands) as Promise<Certificate>);
-    // if (!(await this.isValidHostname("ecb5fafffe091e61" /*url.hostname*/, certificate))) {
-    //     console.log("BAD HOSTNAME");
-    // }
-    // return certificate;
-    // }
-
-    // async isValidHostname(hostname: string, certificate: Certificate): Promise<boolean> {
-
-    //     try {
-
-    //         const result = await execute(
-    //             "openssl",
-    //             "verify",
-    //             "-verify_hostname", hostname,
-    //             certificate
-    //         );
-    //         return true;
-
-    //     } catch(e) {
-    //         console.log(e);
-    //         return false;
-    //     }
-    // }
 }
