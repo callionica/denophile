@@ -21,10 +21,13 @@ export class SSL {
         ]);
 
         const prefix = "subject= ";
-        const subject = result.startsWith(prefix) ? result.substring(prefix.length) : result;
+        let subject = result.startsWith(prefix) ? result.substring(prefix.length) : result;
 
         // TODO - can't parse like this!!!
-        const values = subject.split(",");
+        const commaPlaceholder = "!$comma$!";
+        const commaEscaped = "\\,";
+        subject = subject.replaceAll(commaEscaped, commaPlaceholder);
+        const values = subject.split(",").map(v => v.replace(commaPlaceholder, ","));
         const nameValues = values.map(v => v.split("="));
         return Object.fromEntries(nameValues);
     }
