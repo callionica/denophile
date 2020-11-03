@@ -10,7 +10,7 @@ function toPort(url: URL) {
 }
 
 export class SSL {
-    exec(pipeline: string[]) : Promise<string> {
+    exec(pipeline: string[]): Promise<string> {
         return execute("bash", "-c", pipeline.join(" | "));
     }
 
@@ -20,7 +20,7 @@ export class SSL {
         const PUBLIC_KEY_TO_DER = `openssl pkey -pubin -outform der`;
         const TO_SHA256 = `openssl dgst -sha256 -binary`;
         const TO_BASE64 = `openssl enc -base64`
-        
+
         const commands = [
             PUBLIC_KEY_READ,
             PUBLIC_KEY_TO_DER,
@@ -41,7 +41,7 @@ export class SSL {
         const PUBLIC_KEY_TO_DER = `openssl pkey -pubin -outform der`;
         const TO_SHA256 = `openssl dgst -sha256 -binary`;
         const TO_BASE64 = `openssl enc -base64`
-        
+
         const commands = [
             DOWNLOAD_CERTIFICATE,
             PUBLIC_KEY_READ,
@@ -55,7 +55,7 @@ export class SSL {
 
     fetchCertificate(url: URL): Promise<Certificate> {
         const DOWNLOAD_CERTIFICATES = `openssl s_client -showcerts -servername ${url.hostname} -connect ${url.hostname}:${toPort(url)} </dev/null 2>/dev/null`;
-        console.log(DOWNLOAD_CERTIFICATES);
+
         const FIRST_CERTIFICATE_TO_PEM = `openssl x509 -outform PEM`;
 
         const commands = [
@@ -65,4 +65,29 @@ export class SSL {
 
         return this.exec(commands) as Promise<Certificate>;
     }
+
+    // const certificate = await (this.exec(commands) as Promise<Certificate>);
+    // if (!(await this.isValidHostname("ecb5fafffe091e61" /*url.hostname*/, certificate))) {
+    //     console.log("BAD HOSTNAME");
+    // }
+    // return certificate;
+    // }
+
+    // async isValidHostname(hostname: string, certificate: Certificate): Promise<boolean> {
+
+    //     try {
+
+    //         const result = await execute(
+    //             "openssl",
+    //             "verify",
+    //             "-verify_hostname", hostname,
+    //             certificate
+    //         );
+    //         return true;
+
+    //     } catch(e) {
+    //         console.log(e);
+    //         return false;
+    //     }
+    // }
 }
