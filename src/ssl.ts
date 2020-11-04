@@ -3,16 +3,22 @@ import { execute, exists, FilePath, makeDirectory, rename, toFilePath, toFileURL
 export type Certificate = string & { kind_: "Certificate" };
 export type PublicKeyHash = string & { kind_: "PublicKeyHash" };
 export type Subject = Record<string, string | undefined> & { kind_: "Subject" };
+
 export type Protocol = string & { kind_: "Protocol" };
 export const HTTPS: Protocol = "https:" as Protocol;
 export type Port = string & { kind_: "Port" };
 export type IPAddress = string & { kind_: "IPAddress" };
+
 export type NameResolver = Record<string, IPAddress | undefined>;
 
 export function toPort(url: URL): Port {
     const ports: Record<string, number> = { http: 80, https: 443 };
     const port = url.port || ports[url.protocol] || 443;
     return `${port}` as Port;
+}
+
+export function toProtocol(url: URL): Protocol {
+    return url.protocol as Protocol;
 }
 
 /**
