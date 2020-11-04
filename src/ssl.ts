@@ -4,8 +4,10 @@ export type Certificate = string & { kind_: "Certificate" };
 export type PublicKeyHash = string & { kind_: "PublicKeyHash" };
 export type Subject = Record<string, string | undefined> & { kind_: "Subject" };
 export type Port = string & { kind_: "Port" };
+export type IPAddress = string & { kind_: "IPAddress" };
+export type NameResolver = Record<string, IPAddress | undefined>;
 
-function toPort(url: URL): Port {
+export function toPort(url: URL): Port {
     const ports: Record<string, number> = { http: 80, https: 443 };
     const port = url.port || ports[url.protocol] || 443;
     return `${port}` as Port;
@@ -79,16 +81,26 @@ export class CertificateUtility {
  */
 export class CertificateLibrary {
     folder: URL;
+    nameResolver: NameResolver;
     utility: CertificateUtility;
 
-    constructor(folder: FilePath) {
+    constructor(folder: FilePath, nameResolver: NameResolver = {}) {
         this.utility = new CertificateUtility();
         this.folder = toFileURL(folder);
+        this.nameResolver = nameResolver;
+
         makeDirectory(this.folder);
     }
 
     /** Override to provide custom DNS - for example, switch the hostname for an IP address */
     async toFetchableURL(url: URL): Promise<URL> {
+        const name = url.hostname;
+        const ip = this.nameResolver[name];
+        if (ip !== undefined) {
+            const result = new URL(url.toString());
+            result.hostname = ip;
+            return result;
+        }
         return url;
     }
 

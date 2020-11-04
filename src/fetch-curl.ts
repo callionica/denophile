@@ -2,18 +2,9 @@
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
-import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate } from "./ssl.ts";
+import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, NameResolver, toPort } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
-
-type IPAddress = string;
-
-type DynamicNameResolver = { resolve(name: string): Promise<IPAddress | undefined> };
-type NameResolver = Record<string, IPAddress> | DynamicNameResolver;
-
-function isDynamicNameResolver(x: unknown): x is DynamicNameResolver {
-    return (x as DynamicNameResolver).resolve !== undefined; // TODO
-}
 
 type HttpClient = {
     caFile?: string,
@@ -96,20 +87,11 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         if (options?.client?.nameResolver) {
             const nameResolver = options.client.nameResolver;
             const name = url.hostname;
-            const ports: Record<string, number> = { http: 80, https: 443 };
-            const port = url.port || ports[url.protocol] || 443;
+            const port = toPort(url);
 
-            if (isDynamicNameResolver(nameResolver)) {
-                // TODO - dynamic resolver only gets to see the first name
-                const ip = await nameResolver.resolve(name);
-                if (ip !== undefined) {
-                    resolveArgs = ["--resolve", `${name}:${port}:${ip}`];
-                }
-            } else {
-                resolveArgs = Object.entries(nameResolver).flatMap(([name, ip]) => [
-                    "--resolve", `${name}:${port}:${ip}`
-                ]);
-            }
+            resolveArgs = Object.entries(nameResolver).flatMap(([name, ip]) => [
+                "--resolve", `${name}:${port}:${ip}`
+            ]);
         }
 
         const certificateArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
