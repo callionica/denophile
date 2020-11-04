@@ -2,7 +2,7 @@
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
-import { Pin, CertificateUtility, CertificateLibrary, Certificate } from "./ssl.ts";
+import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
@@ -19,7 +19,7 @@ type HttpClient = {
     caFile?: string,
     skipVerifyingCertificateChain?: boolean,
     nameResolver?: NameResolver;
-    certificateLibrary?: CertificateLibrary;
+    pinningLibrary?: CertificateLibrary;
 };
 
 class Response {
@@ -68,7 +68,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
-        const pin = await options?.client?.certificateLibrary?.getPin(url);
+        const pin = await options?.client?.pinningLibrary?.getPublicKeyHash(url);
         const pins = (pin !== undefined) ? [pin] : [];
         const pinArgs = (pins.length === 0) ? [] : ["--pinnedpubkey", pins.map(pin => `sha256//${pin}`).join(";")];
 

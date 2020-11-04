@@ -1,7 +1,7 @@
 import { execute, exists, FilePath, makeDirectory, rename, toFilePath, toFileURL, writeTextFile } from "./file.ts";
 
 export type Certificate = string & { kind_: "Certificate" };
-export type Pin = string & { kind_: "Pin" };
+export type PublicKeyHash = string & { kind_: "PublicKeyHash" };
 export type Subject = Record<string, string | undefined> & { kind_: "Subject" };
 export type Port = string & { kind_: "Port" };
 
@@ -42,7 +42,7 @@ export class CertificateUtility {
     }
 
     /** Calculates a hash from the specified certificate to use for pinning */
-    getPin(certificateFile: FilePath): Promise<Pin> {
+    getPublicKeyHash(certificateFile: FilePath): Promise<PublicKeyHash> {
         const path = toFilePath(certificateFile);
         const PUBLIC_KEY_READ = `openssl x509 -pubkey -noout -in "${path}"`;
         const PUBLIC_KEY_TO_DER = `openssl pkey -pubin -outform der`;
@@ -56,7 +56,7 @@ export class CertificateUtility {
             TO_BASE64
         ];
 
-        return this.exec(commands) as Promise<Pin>;
+        return this.exec(commands) as Promise<PublicKeyHash>;
     }
 
     /** Returns the certificate from the server specified in the URL - no validation */
@@ -139,8 +139,8 @@ export class CertificateLibrary {
      * 
      * If the certificate is not available, it will be downloaded and verified.
      */
-    async getPin(url: URL): Promise<Pin> {
+    async getPublicKeyHash(url: URL): Promise<PublicKeyHash> {
         const file = await this.getCertificate(url);
-        return await this.utility.getPin(file);
+        return await this.utility.getPublicKeyHash(file);
     }
 }
