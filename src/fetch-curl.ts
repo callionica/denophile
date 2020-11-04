@@ -6,11 +6,11 @@ import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, Nam
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
-type HttpClient = {
+export type HttpClient = {
     caFile?: string,
     skipVerifyingCertificateChain?: boolean,
     nameResolver?: NameResolver;
-    pinningLibrary?: CertificateLibrary;
+    publicKeyHashProvider?: { getPublicKeyHash(url: URL): Promise<PublicKeyHash> };
 };
 
 class Response {
@@ -59,7 +59,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
-        const pin = await options?.client?.pinningLibrary?.getPublicKeyHash(url);
+        const pin = await options?.client?.publicKeyHashProvider?.getPublicKeyHash(url);
         const pins = (pin !== undefined) ? [pin] : [];
         const pinArgs = (pins.length === 0) ? [] : ["--pinnedpubkey", pins.map(pin => `sha256//${pin}`).join(";")];
 
