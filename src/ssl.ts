@@ -3,11 +3,12 @@ import { execute, exists, FilePath, makeDirectory, rename, toFilePath, toFileURL
 export type Certificate = string & { kind_: "Certificate" };
 export type Pin = string & { kind_: "Pin" };
 export type Subject = Record<string, string | undefined> & { kind_: "Subject" };
+export type Port = string & { kind_: "Port" };
 
-function toPort(url: URL) {
+function toPort(url: URL): Port {
     const ports: Record<string, number> = { http: 80, https: 443 };
     const port = url.port || ports[url.protocol] || 443;
-    return port;
+    return `${port}` as Port;
 }
 
 /**
