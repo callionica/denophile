@@ -2,7 +2,7 @@
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
-import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, NameResolver, toPort, Protocol, HTTPS, toProtocol } from "./ssl.ts";
+import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, NameResolver, toPort, Protocol, HTTPS, toProtocol, isServer } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
@@ -112,9 +112,15 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             const name = url.hostname;
             const port = toPort(url);
 
-            resolveArgs = Object.entries(nameResolver).flatMap(([name, ip]) => [
-                "--resolve", `${name}:${port}:${ip}`
-            ]);
+            resolveArgs = Object.entries(nameResolver).flatMap(([name, value]) => {
+                if (isServer(value)) {
+                    const otherPort = value.port || port;
+                    return ["--connect-to", `${name}:${port}:${value.name}:${otherPort}`];
+                } else {
+                    const ip = value;
+                    return ["--resolve", `${name}:${port}:${ip}`];
+                }
+        });
         }
 
         const certificateArgs = (client?.caFile !== undefined) ? ["--cacert", client.caFile] : [];

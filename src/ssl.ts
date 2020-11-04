@@ -9,7 +9,13 @@ export const HTTPS: Protocol = "https:" as Protocol;
 export type Port = string & { kind_: "Port" };
 export type IPAddress = string & { kind_: "IPAddress" };
 
-export type NameResolver = Record<string, IPAddress | undefined>;
+export type Server = { name: string, port?: Port } & { kind_: "Server" };
+
+export type NameResolver = Record<string, Server | IPAddress | undefined>;
+
+export function isServer(value: Server | IPAddress | undefined): value is Server {
+    return (value as Server)?.name !== undefined;
+}
 
 export function toPort(url: URL): Port {
     const ports: Record<string, number> = { http: 80, https: 443 };
@@ -92,6 +98,11 @@ export class CertificateLibrary {
     nameResolver: NameResolver;
     utility: CertificateUtility;
 
+    /**
+     * 
+     * @param folder The location on disk where certificates are stored
+     * @param nameResolver An object that can convert names to IP addresses
+     */
     constructor(folder: FilePath, nameResolver: NameResolver = {}) {
         this.utility = new CertificateUtility();
         this.folder = toFileURL(folder);
@@ -100,13 +111,22 @@ export class CertificateLibrary {
         makeDirectory(this.folder);
     }
 
-    /** Override to provide custom DNS - for example, switch the hostname for an IP address */
+    /**
+     * Override to provide custom DNS - for example, switch the hostname for an IP address.
+     * The default implementation uses the nameResolver passed to the constructor.
+     */
     async toFetchableURL(url: URL): Promise<URL> {
         const name = url.hostname;
-        const ip = this.nameResolver[name];
-        if (ip !== undefined) {
+        const resolved = this.nameResolver[name];
+        if (resolved !== undefined) {
+            const host = isServer(resolved) ? resolved.name : resolved;
             const result = new URL(url.toString());
-            result.hostname = ip;
+            result.hostname = host;
+            if (isServer(resolved)) {
+                if (resolved.port !== undefined) {
+                    result.port = resolved.port;
+                }
+            }
             return result;
         }
         return url;
