@@ -90,6 +90,10 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         ] : [];
 
         if (flags.includes(SKIP_VERIFYING_CERTIFICATE_CHAIN)) {
+            if (pinArgs.length === 0) {
+                throw new Error(`If you skip certificate verification, you must validate connections using public key pinning.`);
+            }
+
             const pinningMessage = (pinArgs.length !== 0) ? "Public key pinning is ON." : "Public key pinning is OFF."
             console.log("WARNING: Skipping verifying certificate chain (--insecure).", pinningMessage);
         }
