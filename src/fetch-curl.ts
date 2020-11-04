@@ -39,6 +39,16 @@ class Response {
 export async function fetch(url: URL | string, options?: { method?: string, body?: string, client?: HttpClient }): Promise<Response> {
     const requestURL = (url instanceof URL) ? url : new URL(url);
 
+    const client = options?.client;
+
+    if (client !== undefined) {
+        if (client.skipVerifyingCertificateChain && (client.publicKeyHashProvider === undefined)) {
+            throw new Error(
+                `If you skip certificate verification, you must validate connections using public key pinning by providing a 'publicKeyHashProvider'.`
+            );
+        }
+    }
+
     async function readExtendedAttribute(attribute: string, source: FilePath): Promise<string> {
         const filePath = toFilePath(source);
         return execute(
@@ -59,7 +69,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         // --xattr writes metadata to the file as extended attributes - includes the final location after following redirects
         const agent = "Mozilla/5.0 (iPad; CPU iPhone OS 12_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0 Mobile/15E148 Safari/604.1";
 
-        const pin = await options?.client?.publicKeyHashProvider?.getPublicKeyHash(url);
+        const pin = await client?.publicKeyHashProvider?.getPublicKeyHash(url);
         const pins = (pin !== undefined) ? [pin] : [];
         const pinArgs = (pins.length === 0) ? [] : ["--pinnedpubkey", pins.map(pin => `sha256//${pin}`).join(";")];
 
@@ -75,17 +85,18 @@ export async function fetch(url: URL | string, options?: { method?: string, body
         const FOLLOW_REDIRECTS = "-L";
         const SKIP_VERIFYING_CERTIFICATE_CHAIN = "--insecure";
 
-        const flags: string[] = options?.client?.skipVerifyingCertificateChain ? [
+        const flags: string[] = client?.skipVerifyingCertificateChain ? [
             SKIP_VERIFYING_CERTIFICATE_CHAIN
         ] : [];
 
         if (flags.includes(SKIP_VERIFYING_CERTIFICATE_CHAIN)) {
-            console.log("WARNING: Skipping verifying certificate chain (--insecure)");
+            const pinningMessage = (pinArgs.length !== 0) ? "Public key pinning is ON." : "Public key pinning is OFF."
+            console.log("WARNING: Skipping verifying certificate chain (--insecure).", pinningMessage);
         }
 
         let resolveArgs: string[] = [];
-        if (options?.client?.nameResolver) {
-            const nameResolver = options.client.nameResolver;
+        if (client?.nameResolver) {
+            const nameResolver = client.nameResolver;
             const name = url.hostname;
             const port = toPort(url);
 
@@ -94,7 +105,7 @@ export async function fetch(url: URL | string, options?: { method?: string, body
             ]);
         }
 
-        const certificateArgs = (options?.client?.caFile !== undefined) ? ["--cacert", options.client.caFile] : [];
+        const certificateArgs = (client?.caFile !== undefined) ? ["--cacert", client.caFile] : [];
 
         await execute(
             "curl",
