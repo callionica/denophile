@@ -2,11 +2,12 @@
 // Currently will leak disk space!!!! Hard-coded directories!!!! Success-oriented coding!!!!
 
 import { FilePath, execute, toFilePath, toFileURL, readTextFile, exists, writeTextFile, rename } from "./file.ts";
-import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, NameResolver, toPort } from "./ssl.ts";
+import { PublicKeyHash, CertificateUtility, CertificateLibrary, Certificate, NameResolver, toPort, Protocol, HTTPS } from "./ssl.ts";
 
 const cacheFolder = toFileURL("/Users/user/Desktop/__current/"); // TODO
 
 export type HttpClient = {
+    protocolsAllowed?: Protocol[],
     caFile?: string,
     skipVerifyingCertificateChain?: boolean,
     nameResolver?: NameResolver;
@@ -40,6 +41,12 @@ export async function fetch(url: URL | string, options?: { method?: string, body
     const requestURL = (url instanceof URL) ? url : new URL(url);
 
     const client = options?.client;
+
+    const protocolsAllowed = client?.protocolsAllowed || [HTTPS];
+
+    if (!protocolsAllowed.includes(requestURL.protocol as Protocol)) {
+        throw new Error(`${requestURL.protocol} protocol is not supported`);
+    }
 
     if (client !== undefined) {
         if (client.skipVerifyingCertificateChain && (client.publicKeyHashProvider === undefined)) {

@@ -3,6 +3,8 @@ import { execute, exists, FilePath, makeDirectory, rename, toFilePath, toFileURL
 export type Certificate = string & { kind_: "Certificate" };
 export type PublicKeyHash = string & { kind_: "PublicKeyHash" };
 export type Subject = Record<string, string | undefined> & { kind_: "Subject" };
+export type Protocol = string & { kind_: "Protocol" };
+export const HTTPS: Protocol = "https:" as Protocol;
 export type Port = string & { kind_: "Port" };
 export type IPAddress = string & { kind_: "IPAddress" };
 export type NameResolver = Record<string, IPAddress | undefined>;
