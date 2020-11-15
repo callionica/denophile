@@ -57,6 +57,10 @@ export class TimeoutCanceled extends Timeout { }
 /**
  * Wait for a specified number of milliseconds.
  * The promise returned is cancellable.
+ * The promise can be resolved by the time expiring
+ * in which case the return value is an instance of TimeoutExpired.
+ * The promise can also be resolved by cancelation
+ * in which case the return value is an instance of TimeoutCanceled.
  */
 export function delay(ms: number): PromiseCancelable<Timeout> {
     const promise = new AsyncPromiseCancelable<Timeout>();
