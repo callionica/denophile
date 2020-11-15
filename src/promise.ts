@@ -226,14 +226,12 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
 
             if (o instanceof Timeout) {
                 // Delay is exceeded
-                // await it.return?.(); // TODO
                 break;
             }
 
             const { done, value } = o;
 
             if (done) {
-                // await it.return?.(); // TODO
                 break;
             }
 
