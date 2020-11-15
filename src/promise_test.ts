@@ -1,5 +1,4 @@
-import { AsyncList, AsyncPromise, AsyncIterableWithTimeout } from "./promise.ts";
-import { delay } from "./utility.ts";
+import { AsyncList, AsyncPromise, AsyncIterableWithTimeout, delay } from "./promise.ts";
 
 Deno.test("promise", async function () {
     const p = new AsyncPromise<number>();

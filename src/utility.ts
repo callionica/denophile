@@ -3,87 +3,6 @@
 
 // A library of compile-time and run-time utilities by Callionica
 
-/** Wait for a specified number of milliseconds */
-export function delay(ms: number): Promise<void> {
-    return new Promise((resolve): number =>
-        setTimeout((): void => {
-            resolve();
-        }, ms)
-    );
-}
-
-/**
- * Retries a function when it fails, with variable time delays between each attempt.
- * The function will be retried once for each entry in the delays array.
- * 
- * @param fn The function to execute
- * @param delays An array of millisecond timings for each delay before retrying
- */
-export async function retry<T>(fn: () => T | Promise<T>, delays: number[]): Promise<T> {
-    try {
-        return await fn();
-    } catch (e) {
-        if (delays.length === 0) {
-            throw e;
-        }
-        console.log("RETRY", new Date(), delays[0]);
-        await delay(delays[0]);
-        return await retry(fn, delays.slice(1));
-    }
-}
-
-/**
- * Helps to ensure that a function cannot be called too frequently over the long term.
- * It does this by returning a new function that will delay the call to the inner function
- * by the necessary amount based on how many previous calls there have been and how much time 
- * has elapsed since the first call.
- * 
- * Note that this function does _not_ ensure that any 2 calls to the function have a
- * minimum delay between them. It deliberately allows bursty calls while preventing
- * too many calls over the long term. A "large gap reset" means that it never gets 
- * too bursty.
- * 
- * The large gap reset means that if the function falls behind by
- * 10 times the average desired gap, the tracked statistics are reset and throttling
- * acts like the function has been called for the first time.
- * 
- * @param fn The function to be wrapped.
- * @param delayMS The average delay in milliseconds between calls to the function.
- */
-// deno-lint-ignore no-explicit-any
-export function throttle<T extends (...args: any[]) => any>(
-    fn: T,
-    delayMS: number
-): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    let count = 0;
-    let first: number | undefined;
-
-    async function fn_(...args: Parameters<T>): Promise<ReturnType<T>> {
-        const now = Date.now();
-
-        ++count;
-        if (first === undefined) {
-            first = Date.now();
-        }
-
-        const elapsed = now - first;
-        const desiredElapsed = (count - 1) * delayMS;
-        const currentDelay = desiredElapsed - elapsed;
-        if (currentDelay > 0) {
-            await delay(currentDelay);
-        } else if ((-currentDelay) > (10 * delayMS)) {
-            // We're running a lot slower than expected
-            // To ensure that we don't suddenly produce a massive burst
-            // in an attempt to catch up, reset all the statistics
-            count = 1;
-            first = now;
-        }
-
-        return (await fn(...args)) as ReturnType<T>;
-    }
-    return fn_;
-}
-
 export function dataToHex(data: Uint8Array): string {
     function byteToHex(byte: number): string {
         return byte.toString(16).padStart(2, "0");
@@ -229,7 +148,7 @@ type Mix<T, V> = {
 type ZipResult<Input extends unknown[], Value = undefined> = Mix<ValuesOfIterables<Input>, Value>;
 
 /** Returns the result of calling `Symbol.asyncIterator` or `Symbol.iterator` method */
-function getIterator<T>(iterable: AnyIterable<T>) {
+export function getIterator<T>(iterable: AnyIterable<T>) {
     return (iterable as AsyncIterable<T>)[Symbol.asyncIterator]?.() || (iterable as Iterable<T>)[Symbol.iterator]?.();
 }
 
