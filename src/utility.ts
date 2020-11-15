@@ -656,35 +656,3 @@ function removeDiacritics(text: string) {
         return diacriticsMap[letter] || letter;
     });
 }
-
-/**
- * A Promise that you can resolve or reject by
- * calling `promiseX.resolve()` or `promiseX.reject()`
- */
-export class PromiseX<T> implements Promise<T> {
-    promise: Promise<T>;
-
-    /** Resolves the promise */
-    resolve?: (value?: T | PromiseLike<T>) => void;
-    
-    /** Rejects the promise */
-    // deno-lint-ignore no-explicit-any
-    reject?: (reason?: any) => void;
-
-    then: Promise<T>["then"];
-    catch: Promise<T>["catch"];
-    finally: Promise<T>["finally"];
-    [Symbol.toStringTag]: string;
-
-    constructor() {
-        this.promise = new Promise((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
-        });
-
-        this.then = this.promise.then.bind(this.promise);
-        this.catch = this.promise.catch.bind(this.promise);
-        this.finally = this.promise.finally.bind(this.promise);
-        this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
-    }
-}

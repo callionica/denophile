@@ -1,5 +1,36 @@
 // Promise and AsyncIterable implementations
-import { PromiseX } from "./utility.ts";
+
+/**
+ * A Promise that you can resolve or reject by
+ * calling `promiseX.resolve()` or `promiseX.reject()`
+ */
+export class PromiseX<T> implements Promise<T> {
+    promise: Promise<T>;
+
+    /** Resolves the promise */
+    resolve?: (value?: T | PromiseLike<T>) => void;
+    
+    /** Rejects the promise */
+    // deno-lint-ignore no-explicit-any
+    reject?: (reason?: any) => void;
+
+    then: Promise<T>["then"];
+    catch: Promise<T>["catch"];
+    finally: Promise<T>["finally"];
+    [Symbol.toStringTag]: string;
+
+    constructor() {
+        this.promise = new Promise((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+        });
+
+        this.then = this.promise.then.bind(this.promise);
+        this.catch = this.promise.catch.bind(this.promise);
+        this.finally = this.promise.finally.bind(this.promise);
+        this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
+    }
+}
 
 /**
  * AsyncList is a list to which elements may be added asynchronously and
@@ -8,7 +39,7 @@ import { PromiseX } from "./utility.ts";
 class AsyncList<T> implements AsyncIterable<T> {
     list: T[] = [];
     status: "active" | "done" = "active";
-    promises: PromiseX<void>[] = [];
+    waitingIterators: PromiseX<void>[] = [];
 
     get length(): number {
         return this.list.length;
@@ -16,8 +47,8 @@ class AsyncList<T> implements AsyncIterable<T> {
 
     /** Notifies any iterators that more data is available or that the list is complete */
     change() {
-        const promises = this.promises;
-        this.promises = [];
+        const promises = this.waitingIterators;
+        this.waitingIterators = [];
 
         for (const promise of promises) {
             promise.resolve!();
@@ -46,7 +77,7 @@ class AsyncList<T> implements AsyncIterable<T> {
             }
 
             const promise = new PromiseX<void>();
-            this.promises.push(promise);
+            this.waitingIterators.push(promise);
             await promise;
         }
     }
