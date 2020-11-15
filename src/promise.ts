@@ -212,8 +212,16 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
     perLoopMS: number = 3000;
     perItemMS: number = 1000;
 
-    constructor(iterable: AsyncIterable<T>) {
+    constructor(iterable: AsyncIterable<T>, perLoopMS?, perItemMS?) {
         this.iterable = iterable;
+
+        if (perLoopMS !== undefined) {
+            this.perLoopMS = perLoopMS;
+        }
+
+        if (perItemMS !== undefined) {
+            this.perItemMS = perItemMS;
+        }
     }
 
     [Symbol.asyncIterator](): AsyncIterator<T> {
