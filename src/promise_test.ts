@@ -1,4 +1,4 @@
-import { AsyncList, AsyncPromise } from "./promise.ts";
+import { AsyncList, AsyncPromise, AsyncIterableWithTimeout } from "./promise.ts";
 
 Deno.test("promise", async function () {
     const p = new AsyncPromise<number>();
@@ -23,4 +23,20 @@ Deno.test("promise", async function () {
     l.close();
 
     console.log("done");
+});
+
+Deno.test("timeout", async function () {
+    const l = new AsyncList<number>();
+    l.list = [1,2,3,4];
+
+    const timedList = new AsyncIterableWithTimeout(l);
+
+    console.log(Date.now());
+    for await (const n of timedList) {
+        console.log(n);
+    }
+
+    console.log("done", Date.now());
+
+    l.close();
 });

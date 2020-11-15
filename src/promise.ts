@@ -1,4 +1,7 @@
+// deno-lint-ignore-file
 // Promise and AsyncIterable implementations
+
+import { delay, getIterator, Timeout } from "./utility.ts";
 
 /**
  * A Promise that you can resolve or reject by
@@ -9,7 +12,7 @@ export class AsyncPromise<T> implements Promise<T> {
 
     /** Resolves the promise */
     resolve!: (value?: T | PromiseLike<T>) => void;
-    
+
     /** Rejects the promise */
     // deno-lint-ignore no-explicit-any
     reject!: (reason?: any) => void;
@@ -94,6 +97,42 @@ export class AsyncList<T> implements AsyncIterable<T> {
             }
 
             await this.onChange;
+        }
+    }
+}
+
+export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
+    iterable: AsyncIterable<T>;
+    perLoopMS: number = 3000;
+    perItemMS: number = 1000;
+
+    constructor(iterable: AsyncIterable<T>) {
+        this.iterable = iterable;
+    }
+
+    [Symbol.asyncIterator](): AsyncIterator<T> {
+        return this.iterator();
+    }
+
+    async * iterator() {
+        const perLoop = delay(this.perLoopMS);
+        const it = getIterator(this.iterable);
+        while (true) {
+            const perItem = delay(this.perItemMS);
+            const o = await Promise.race([it.next(), perLoop, perItem]);
+
+            if (o instanceof Timeout) {
+                // Delay is exceeded
+                break;
+            }
+
+            const { done, value } = o;
+
+            if (done) {
+                break;
+            }
+
+            yield value;
         }
     }
 }
