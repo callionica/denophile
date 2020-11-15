@@ -8,11 +8,11 @@ export class AsyncPromise<T> implements Promise<T> {
     promise: Promise<T>;
 
     /** Resolves the promise */
-    resolve?: (value?: T | PromiseLike<T>) => void;
+    resolve!: (value?: T | PromiseLike<T>) => void;
     
     /** Rejects the promise */
     // deno-lint-ignore no-explicit-any
-    reject?: (reason?: any) => void;
+    reject!: (reason?: any) => void;
 
     then: Promise<T>["then"];
     catch: Promise<T>["catch"];
@@ -34,30 +34,47 @@ export class AsyncPromise<T> implements Promise<T> {
 
 /**
  * AsyncList is a list to which elements may be added asynchronously and
- * async iterators will automatically get the new elements
+ * async iterators will automatically get the new elements.
  */
-class AsyncList<T> implements AsyncIterable<T> {
+export class AsyncList<T> implements AsyncIterable<T> {
     list: T[] = [];
     status: "active" | "done" = "active";
-    waitingIterators: AsyncPromise<void>[] = [];
+    onChange_: AsyncPromise<void> = new AsyncPromise();
 
     get length(): number {
         return this.list.length;
     }
 
-    /** Notifies any iterators that more data is available or that the list is complete */
+    /**
+     * Notifies interested parties (including iterators) that more data is available
+     * or that the list is complete.
+     */
     change() {
-        const promises = this.waitingIterators;
-        this.waitingIterators = [];
-
-        for (const promise of promises) {
-            promise.resolve!();
-        }
+        const promise = this.onChange_;
+        this.onChange_ = new AsyncPromise();
+        promise.resolve();
     }
 
-    finish() {
+    /**
+     * Sets the list status to "done" so that iterators will terminate
+     * and calls to onChange will throw an exception.
+     */
+    close() {
         this.status = "done";
         this.change();
+    }
+
+    /**
+     * Provides a notification for the next change only.
+     * Get the value of this property again to get notified of another change.
+     */
+    get onChange(): Promise<void> {
+        if (this.status === "done") {
+            // Throw an exception because there won't be any future changes
+            // so anyone awaiting this promise would be waiting a loooong time.
+            throw new Error(`AsyncList is done`);
+        }
+        return this.onChange_;
     }
 
     [Symbol.asyncIterator](): AsyncIterator<T> {
@@ -76,9 +93,7 @@ class AsyncList<T> implements AsyncIterable<T> {
                 break;
             }
 
-            const promise = new AsyncPromise<void>();
-            this.waitingIterators.push(promise);
-            await promise;
+            await this.onChange;
         }
     }
 }
