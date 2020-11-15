@@ -1,7 +1,11 @@
 // deno-lint-ignore-file
 // Promise and AsyncIterable implementations
 
-import { delay, getIterator, Timeout } from "./utility.ts";
+import { getIterator } from "./utility.ts";
+
+interface PromiseCancelable<T> extends Promise<T> {
+    cancel(): void;
+}
 
 /**
  * A Promise that you can resolve or reject by
@@ -33,6 +37,32 @@ export class AsyncPromise<T> implements Promise<T> {
         this.finally = this.promise.finally.bind(this.promise);
         this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
     }
+}
+
+/** A promise that you can resolve, reject, or cancel */
+class AsyncPromiseCancelable<T> extends AsyncPromise<T> {
+    /**
+     * Cancels the action that would normally resolve the promise.
+     * Cancellation may resolve or reject the promise or do neither.
+     * Read the docs for the specific use!
+     * */
+    cancel!: () => void;
+}
+
+/** A specific class to return from async functions for when we use Promise.race etc */
+export class Timeout { }
+export class TimeoutExpired extends Timeout { }
+export class TimeoutCanceled extends Timeout { }
+
+/**
+ * Wait for a specified number of milliseconds.
+ * The promise returned is cancellable.
+ */
+export function delay(ms: number): PromiseCancelable<Timeout> {
+    const promise = new AsyncPromiseCancelable<Timeout>();
+    const token = setTimeout(() => promise.resolve(new TimeoutExpired()), ms);
+    promise.cancel = () => { clearTimeout(token); promise.resolve(new TimeoutCanceled()); };
+    return promise;
 }
 
 /**
@@ -120,19 +150,23 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
         while (true) {
             const perItem = delay(this.perItemMS);
             const o = await Promise.race([it.next(), perLoop, perItem]);
+            perItem.cancel();
 
             if (o instanceof Timeout) {
                 // Delay is exceeded
+                // await it.return?.(); // TODO
                 break;
             }
 
             const { done, value } = o;
 
             if (done) {
+                // await it.return?.(); // TODO
                 break;
             }
 
             yield value;
         }
+        perLoop.cancel();
     }
 }

@@ -1,4 +1,5 @@
 import { AsyncList, AsyncPromise, AsyncIterableWithTimeout } from "./promise.ts";
+import { delay } from "./utility.ts";
 
 Deno.test("promise", async function () {
     const p = new AsyncPromise<number>();
@@ -39,4 +40,14 @@ Deno.test("timeout", async function () {
     console.log("done", Date.now());
 
     l.close();
+});
+
+Deno.test("promise-error", async function () {
+    const perLoop = delay(3000);
+    for (let i = 0; i < 1; i++) {
+        const perItem = delay(1000);
+        const o = await Promise.race([perLoop, perItem]);
+        console.log(o);
+    }
+    // await perLoop;
 });
