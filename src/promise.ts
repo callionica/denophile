@@ -2,9 +2,9 @@
 
 /**
  * A Promise that you can resolve or reject by
- * calling `promiseX.resolve()` or `promiseX.reject()`
+ * calling `promise.resolve()` or `promise.reject()`
  */
-export class PromiseX<T> implements Promise<T> {
+export class AsyncPromise<T> implements Promise<T> {
     promise: Promise<T>;
 
     /** Resolves the promise */
@@ -39,7 +39,7 @@ export class PromiseX<T> implements Promise<T> {
 class AsyncList<T> implements AsyncIterable<T> {
     list: T[] = [];
     status: "active" | "done" = "active";
-    waitingIterators: PromiseX<void>[] = [];
+    waitingIterators: AsyncPromise<void>[] = [];
 
     get length(): number {
         return this.list.length;
@@ -76,7 +76,7 @@ class AsyncList<T> implements AsyncIterable<T> {
                 break;
             }
 
-            const promise = new PromiseX<void>();
+            const promise = new AsyncPromise<void>();
             this.waitingIterators.push(promise);
             await promise;
         }
