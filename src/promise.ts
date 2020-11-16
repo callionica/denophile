@@ -205,6 +205,16 @@ export class AsyncList<T> implements AsyncIterable<T> {
             await this.nextChange();
         }
     }
+
+    push(...items: T[]): number {
+        if (this.status === "done") {
+            throw new Error(`AsyncList is done`);
+        }
+
+        const result = this.list.push(...items);
+        this.change();
+        return result;
+    }
 }
 
 /**

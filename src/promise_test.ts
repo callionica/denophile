@@ -8,8 +8,8 @@ Deno.test("promise", async function () {
     await p;
 
     const l = new AsyncList<number>();
-    l.onChange.then(x => console.log("L1", x));
-    l.onChange.then(x => console.log("L2", x));
+    l.nextChange().then(x => console.log("L1", x));
+    l.nextChange().then(x => console.log("L2", x));
     l.change();
 
     l.list = [1,2,3,4];
@@ -47,6 +47,7 @@ Deno.test("promise-error", async function () {
         const perItem = delay(1000);
         const o = await Promise.race([perLoop, perItem]);
         console.log(o);
+        perItem.cancel();
     }
     await perLoop;
 });
