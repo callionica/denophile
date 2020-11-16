@@ -57,9 +57,9 @@ export class TimeoutCanceled extends Timeout { }
 /**
  * Wait for a specified number of milliseconds.
  * The promise returned is cancellable.
- * The promise can be resolved by the time expiring
+ * The promise can be resolved by the time expiring,
  * in which case the return value is an instance of TimeoutExpired.
- * The promise can also be resolved by cancelation
+ * The promise can also be resolved by cancelation,
  * in which case the return value is an instance of TimeoutCanceled.
  */
 export function delay(ms: number): PromiseCancelable<Timeout> {
@@ -148,7 +148,7 @@ export function throttle<T extends (...args: any[]) => any>(
 export class AsyncList<T> implements AsyncIterable<T> {
     list: T[] = [];
     status: "active" | "done" = "active";
-    onChange_: AsyncPromise<void> = new AsyncPromise();
+    nextChange_: AsyncPromise<void> = new AsyncPromise();
 
     get length(): number {
         return this.list.length;
@@ -159,14 +159,14 @@ export class AsyncList<T> implements AsyncIterable<T> {
      * or that the list is complete.
      */
     change() {
-        const promise = this.onChange_;
-        this.onChange_ = new AsyncPromise();
-        promise.resolve();
+        const thisChange = this.nextChange_;
+        this.nextChange_ = new AsyncPromise();
+        thisChange.resolve();
     }
 
     /**
      * Sets the list status to "done" so that iterators will terminate
-     * and calls to onChange will throw an exception.
+     * and calls to `nextChange` will throw an exception.
      */
     close() {
         this.status = "done";
@@ -175,15 +175,15 @@ export class AsyncList<T> implements AsyncIterable<T> {
 
     /**
      * Provides a notification for the next change only.
-     * Get the value of this property again to get notified of another change.
+     * Call this again to get notified of another change.
      */
-    get onChange(): Promise<void> {
+    nextChange(): Promise<void> {
         if (this.status === "done") {
             // Throw an exception because there won't be any future changes
             // so anyone awaiting this promise would be waiting a loooong time.
             throw new Error(`AsyncList is done`);
         }
-        return this.onChange_;
+        return this.nextChange_;
     }
 
     [Symbol.asyncIterator](): AsyncIterator<T> {
@@ -202,7 +202,7 @@ export class AsyncList<T> implements AsyncIterable<T> {
                 break;
             }
 
-            await this.onChange;
+            await this.nextChange();
         }
     }
 }
