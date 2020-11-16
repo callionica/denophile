@@ -207,12 +207,17 @@ export class AsyncList<T> implements AsyncIterable<T> {
     }
 }
 
+/**
+ * Wraps an async iterable with one that adds a per-loop and per-item timeout.
+ * Currently, if either timeout expires, the iterator just returns immediately
+ * (so there is no error or other detectable condition - just like a short list).
+ */
 export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
     iterable: AsyncIterable<T>;
     perLoopMS: number = 3000;
     perItemMS: number = 1000;
 
-    constructor(iterable: AsyncIterable<T>, perLoopMS?, perItemMS?) {
+    constructor(iterable: AsyncIterable<T>, perLoopMS?: number, perItemMS?: number) {
         this.iterable = iterable;
 
         if (perLoopMS !== undefined) {
@@ -230,25 +235,28 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
 
     async * iterator() {
         const perLoop = delay(this.perLoopMS);
-        const it = getIterator(this.iterable);
-        while (true) {
-            const perItem = delay(this.perItemMS);
-            const o = await Promise.race([it.next(), perLoop, perItem]);
-            perItem.cancel();
+        try {
+            const it = getIterator(this.iterable);
+            while (true) {
+                const perItem = delay(this.perItemMS);
+                const o = await Promise.race([it.next(), perLoop, perItem]);
+                perItem.cancel();
 
-            if (o instanceof Timeout) {
-                // Delay is exceeded
-                break;
+                if (o instanceof Timeout) {
+                    // Delay is exceeded
+                    break;
+                }
+
+                const { done, value } = o;
+
+                if (done) {
+                    break;
+                }
+
+                yield value;
             }
-
-            const { done, value } = o;
-
-            if (done) {
-                break;
-            }
-
-            yield value;
+        } finally {
+            perLoop.cancel();
         }
-        perLoop.cancel();
     }
 }

@@ -48,5 +48,5 @@ Deno.test("promise-error", async function () {
         const o = await Promise.race([perLoop, perItem]);
         console.log(o);
     }
-    // await perLoop;
+    await perLoop;
 });
