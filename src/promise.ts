@@ -3,13 +3,37 @@
 
 import { getIterator } from "./utility.ts";
 
+/** If T is Promise<U> then UnPromise<T> is U. Otherwise UnPromise<T> is T. */
+type UnPromise<T> = T extends PromiseLike<infer U> ? U : T;
+
+/**
+ * A promise that can be canceled.
+ * 
+ * Canceling a promise either resolves it or rejects it
+ * and cancels the operation that would normally
+ * lead to the settlement of the promise.
+ * 
+ * The exact results of canceling a promise will depend on the particular API
+ * so read the documentation to understand exactly what `cancel` does.
+ */
 export interface PromiseCancelable<T> extends Promise<T> {
+    /**
+     * Cancels the operation that would normally lead to the promise
+     * being settled and settles the promise by resolving or rejecting it.
+     * 
+     * Read the documentation for the specific API to understand whether the 
+     * promise will be resolved or rejected and what value or reason will be
+     * returned.
+     * 
+     * Note that cancellation may be an asynchronous operation, but you don't
+     * need to await the `cancel` call itself because you will know
+     * when cancellation is complete by the settlement of the promise.
+     */
     cancel(): void;
 }
 
 /**
- * A Promise that you can resolve or reject by
- * calling `promise.resolve()` or `promise.reject()`
+ * A wrapper for a promise to be used as a base class
  */
 export class PromiseWrapper<T> implements Promise<T> {
     promise: Promise<T>;
@@ -27,6 +51,16 @@ export class PromiseWrapper<T> implements Promise<T> {
         this.finally = this.promise.finally.bind(this.promise);
         this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
     }
+}
+
+/** A promise that you can cancel */
+export class PromiseCancelableWrapper<T> extends PromiseWrapper<T> implements PromiseCancelable<T> {
+    /**
+     * Cancels the action that would normally resolve the promise.
+     * Cancellation may resolve or reject the promise or do neither.
+     * Read the docs for the specific use!
+     * */
+    cancel!: () => void;
 }
 
 /**
@@ -80,8 +114,8 @@ export class TimeoutCanceled extends Timeout { }
  * The promise can also be resolved by cancelation,
  * in which case the return value is an instance of TimeoutCanceled.
  */
-export function delay(ms: number): PromiseCancelable<Timeout> {
-    const promise = new AsyncPromiseCancelable<Timeout>();
+export function delay(ms: number): PromiseCancelable<TimeoutExpired | TimeoutCanceled> {
+    const promise = new AsyncPromiseCancelable<TimeoutExpired | TimeoutCanceled>();
     const token = setTimeout(() => promise.resolve(new TimeoutExpired()), ms);
     promise.cancel = () => { clearTimeout(token); promise.resolve(new TimeoutCanceled()); };
     return promise;
@@ -161,15 +195,22 @@ export function throttle<T extends (...args: any[]) => any>(
 
 /**
  * Races a bunch of promises against a timeout. Who will win?
+ * 
+ * If the timeout wins, the promise is resolved to an instance of TimeoutExpired.
+ * 
+ * If the promise is canceled, the promise is resolved to an instance of TimeoutCanceled.
+ * 
  * @param values Promises to race
  * @param ms A timeout to join the race
  */
-export async function raceAgainstTime<T>(values: readonly T[], ms: number) {
+export function raceAgainstTime<T>(values: readonly T[], ms: number)
+    : PromiseCancelable<TimeoutExpired | TimeoutCanceled | UnPromise<T>> {
     const timeout = delay(ms);
     try {
-        const promise = Promise.race([...values, timeout]);
-        (promise as any).cancel = timeout.cancel.bind(timeout);
-        return await promise;
+        const original = Promise.race([...values, timeout]);
+        const promise = new PromiseCancelableWrapper(original);
+        promise.cancel = timeout.cancel.bind(timeout);
+        return promise;
     } finally {
         timeout.cancel();
     }
