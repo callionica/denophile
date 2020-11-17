@@ -28,6 +28,9 @@ export interface PromiseCancelable<T> extends Promise<T> {
      * Note that cancellation may be an asynchronous operation, but you don't
      * need to await the `cancel` call itself because you will know
      * when cancellation is complete by the settlement of the promise.
+     * 
+     * Implementations of `cancel` should ensure that cancel can be called multiple
+     * times without problem.
      */
     cancel(): void;
 }
@@ -113,6 +116,8 @@ export class TimeoutCanceled extends Timeout { }
  * in which case the return value is an instance of TimeoutExpired.
  * The promise can also be resolved by cancelation,
  * in which case the return value is an instance of TimeoutCanceled.
+ * 
+ * Note that calling `cancel` multiple times is OK.
  */
 export function delay(ms: number): PromiseCancelable<TimeoutExpired | TimeoutCanceled> {
     const promise = new AsyncPromiseCancelable<TimeoutExpired | TimeoutCanceled>();
@@ -213,11 +218,16 @@ export function raceAgainstTime<T>(values: readonly T[], ms: number)
     const original = Promise.race([...values, timeout]);
     
     // Cancel the timeout as soon as the race ends however the race ends
-    original.finally(() => timeout.cancel());
+    original.finally(() => { timeout.cancel(); });
     
     // Create a wrapper so the caller can cancel the race early
     const promise = new PromiseCancelableWrapper(original);
     promise.cancel = timeout.cancel.bind(timeout);
+
+    // This code works because calling cancel twice is OK
+    // (which can happen when caller calls cancel and then the finally calls cancel)
+    // It is the responsibility of the cancel implementation
+    // to ensure safety in the face of multiple calls.
 
     // Return the cancelable promise
     return promise;
