@@ -3,7 +3,7 @@
 
 import { getIterator } from "./utility.ts";
 
-interface PromiseCancelable<T> extends Promise<T> {
+export interface PromiseCancelable<T> extends Promise<T> {
     cancel(): void;
 }
 
@@ -11,9 +11,29 @@ interface PromiseCancelable<T> extends Promise<T> {
  * A Promise that you can resolve or reject by
  * calling `promise.resolve()` or `promise.reject()`
  */
-export class AsyncPromise<T> implements Promise<T> {
+export class PromiseWrapper<T> implements Promise<T> {
     promise: Promise<T>;
 
+    then: Promise<T>["then"];
+    catch: Promise<T>["catch"];
+    finally: Promise<T>["finally"];
+    [Symbol.toStringTag]: string;
+
+    constructor(promise: Promise<T>) {
+        this.promise = promise;
+
+        this.then = this.promise.then.bind(this.promise);
+        this.catch = this.promise.catch.bind(this.promise);
+        this.finally = this.promise.finally.bind(this.promise);
+        this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
+    }
+}
+
+/**
+ * A Promise that you can resolve or reject by
+ * calling `promise.resolve()` or `promise.reject()`
+ */
+export class AsyncPromise<T> extends PromiseWrapper<T> {
     /** Resolves the promise */
     resolve!: (value?: T | PromiseLike<T>) => void;
 
@@ -21,21 +41,19 @@ export class AsyncPromise<T> implements Promise<T> {
     // deno-lint-ignore no-explicit-any
     reject!: (reason?: any) => void;
 
-    then: Promise<T>["then"];
-    catch: Promise<T>["catch"];
-    finally: Promise<T>["finally"];
-    [Symbol.toStringTag]: string;
-
     constructor() {
-        this.promise = new Promise((resolve, reject) => {
-            this.resolve = resolve;
-            this.reject = reject;
+        let res!: (value?: T | PromiseLike<T>) => void;
+        let rej!: (reason?: any) => void;
+
+        const promise: Promise<T> = new Promise((resolve, reject) => {
+            res = resolve;
+            rej = reject;
         });
 
-        this.then = this.promise.then.bind(this.promise);
-        this.catch = this.promise.catch.bind(this.promise);
-        this.finally = this.promise.finally.bind(this.promise);
-        this[Symbol.toStringTag] = this.promise[Symbol.toStringTag];
+        super(promise);
+
+        this.resolve = res;
+        this.reject = rej;
     }
 }
 
@@ -142,6 +160,22 @@ export function throttle<T extends (...args: any[]) => any>(
 }
 
 /**
+ * Races a bunch of promises against a timeout. Who will win?
+ * @param values Promises to race
+ * @param ms A timeout to join the race
+ */
+export async function raceAgainstTime<T>(values: readonly T[], ms: number) {
+    const timeout = delay(ms);
+    try {
+        const promise = Promise.race([...values, timeout]);
+        (promise as any).cancel = timeout.cancel.bind(timeout);
+        return await promise;
+    } finally {
+        timeout.cancel();
+    }
+}
+
+/**
  * AsyncList is a list to which elements may be added asynchronously and
  * async iterators will automatically get the new elements.
  */
@@ -160,7 +194,9 @@ export class AsyncList<T> implements AsyncIterable<T> {
      */
     change() {
         const thisChange = this.nextChange_;
-        this.nextChange_ = new AsyncPromise();
+        if (this.status !== "done") {
+            this.nextChange_ = new AsyncPromise();
+        }
         thisChange.resolve();
     }
 
@@ -248,9 +284,7 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
         try {
             const it = getIterator(this.iterable);
             while (true) {
-                const perItem = delay(this.perItemMS);
-                const o = await Promise.race([it.next(), perLoop, perItem]);
-                perItem.cancel();
+                const o = await raceAgainstTime([it.next(), perLoop], this.perItemMS);
 
                 if (o instanceof Timeout) {
                     // Delay is exceeded
@@ -269,4 +303,14 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
             perLoop.cancel();
         }
     }
+}
+
+const ignored: Promise<any>[] = [];
+
+export function ignore(promise: Promise<any>): void {
+    ignored.push(promise);
+}
+
+export function awaitExit() {
+    return Promise.allSettled(ignored);
 }
