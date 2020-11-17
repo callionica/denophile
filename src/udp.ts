@@ -2,6 +2,7 @@
 import {
     AsyncPromise, AsyncPromiseCancelable, PromiseCancelable,
     raceAgainstTime,
+    Timeout,
     TimeoutCanceled, TimeoutExpired
 } from "./promise.ts"
 
@@ -20,6 +21,9 @@ export class Shutdown { }
 export class UDP {
     _connection: Deno.DatagramConn;
 
+    /** The promise that is resolved when the receive loop is finished */
+    _loop: Promise<Shutdown>;
+
     /** Triggers shutdown which is not cancelable. `cancel` is a no-op. */
     _shutdown: AsyncPromiseCancelable<Shutdown>;
 
@@ -30,10 +34,11 @@ export class UDP {
             transport: "udp" as const,
         });
         this._shutdown = new AsyncPromiseCancelable();
+        this._loop = this._receiveLoop();
     }
 
     // deno-lint-ignore no-inferrable-types
-    send(buffer: Uint8Array, server: Server, timeout: number = 1000)
+    send(buffer: Uint8Array, server: Server, timeout: number = Infinity)
         : PromiseCancelable<Shutdown | TimeoutExpired | TimeoutCanceled | number> {
         if (this._shutdown.isResolved) {
             return this._shutdown;
@@ -56,15 +61,30 @@ export class UDP {
         return raceAgainstTime([promise, this._shutdown], timeout);
     }
 
-    receiveLoop(): Promise<Shutdown> {
+    async _receiveLoop(): Promise<Shutdown> {
         while (!this._shutdown.isResolved) {
-            const result = this.receive();
+            const result = await this.receive();
+
+            if (result instanceof Shutdown) {
+                break;
+            }
+
+            if (result instanceof Timeout) {
+                continue;
+            }
+
+            console.log(result);
+            await this.onreceive(result[0], result[1]);
         }
         return this._shutdown;
     }
 
-    shutdown(): Promise<Shutdown> {
-        this._shutdown.resolve();
+    async onreceive(buffer: Uint8Array, server: Server): Promise<void> {
+    }
+
+    async shutdown(): Promise<Shutdown> {
+        this._shutdown.resolve(new Shutdown());
+        await this._loop;
         this._connection.close();
         return this._shutdown;
     }

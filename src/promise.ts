@@ -75,7 +75,7 @@ export class AsyncPromise<T> extends PromiseWrapper<T> {
     isResolved: boolean;
 
     /** Resolves the promise */
-    resolve: (value?: T | PromiseLike<T>) => void;
+    resolve: (value: T | PromiseLike<T>) => void;
 
     /** Rejects the promise */
     // deno-lint-ignore no-explicit-any
@@ -93,7 +93,7 @@ export class AsyncPromise<T> extends PromiseWrapper<T> {
         super(promise);
 
         this.isResolved = false;
-        this.resolve = (value?: T | PromiseLike<T>) => { this.isResolved = true; res(value); };
+        this.resolve = (value: T | PromiseLike<T>) => { this.isResolved = true; res(value); };
         this.reject = rej;
     }
 }
