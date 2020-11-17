@@ -17,13 +17,6 @@ export class Server {
 
 export class Shutdown { }
 
-function remove<T>(list: T[], value: T) {
-    const index = list.findIndex(v => value === v);
-    if (index >= 0) {
-        list.splice(index, 1);
-    }
-}
-
 export class UDP {
     _connection: Deno.DatagramConn;
 
@@ -50,7 +43,7 @@ export class UDP {
         return raceAgainstTime([promise, this._shutdown], timeout);
     }
 
-    receive(timeout: number = 10 * 1000)
+    receive(timeout: number = Infinity)
         : PromiseCancelable<Shutdown | TimeoutExpired | TimeoutCanceled | [Uint8Array, Server]> {
         if (this._shutdown.isResolved) {
             return this._shutdown;
@@ -63,9 +56,16 @@ export class UDP {
         return raceAgainstTime([promise, this._shutdown], timeout);
     }
 
-    async shutdown() {
+    receiveLoop(): Promise<Shutdown> {
+        while (!this._shutdown.isResolved) {
+            const result = this.receive();
+        }
+        return this._shutdown;
+    }
+
+    shutdown(): Promise<Shutdown> {
         this._shutdown.resolve();
         this._connection.close();
-        await this._shutdown;
+        return this._shutdown;
     }
 }

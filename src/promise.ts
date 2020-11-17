@@ -130,10 +130,17 @@ export class TimeoutCanceled extends Timeout { }
  * Note that calling `cancel` multiple times is OK.
  */
 export function delay(ms: number): PromiseCancelable<TimeoutExpired | TimeoutCanceled> {
-    const promise = new AsyncPromiseCancelable<TimeoutExpired | TimeoutCanceled>();
-    const token = setTimeout(() => promise.resolve(new TimeoutExpired()), ms);
-    promise.cancel = () => { clearTimeout(token); promise.resolve(new TimeoutCanceled()); };
-    return promise;
+    if (ms === Infinity) {
+        // An infinite timeout is still useful because the promise can be canceled
+        const promise = new AsyncPromiseCancelable<TimeoutExpired | TimeoutCanceled>();
+        promise.cancel = () => { promise.resolve(new TimeoutCanceled()); };
+        return promise;
+    } else {
+        const promise = new AsyncPromiseCancelable<TimeoutExpired | TimeoutCanceled>();
+        const token = setTimeout(() => promise.resolve(new TimeoutExpired()), ms);
+        promise.cancel = () => { clearTimeout(token); promise.resolve(new TimeoutCanceled()); };
+        return promise;
+    }
 }
 
 /**
