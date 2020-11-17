@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 import {
     AsyncPromise, AsyncPromiseCancelable, PromiseCancelable,
     raceAgainstTime,
@@ -16,6 +17,13 @@ export class Server {
 
 export class Shutdown { }
 
+function remove<T>(list: T[], value: T) {
+    const index = list.findIndex(v => value === v);
+    if (index >= 0) {
+        list.splice(index, 1);
+    }
+}
+
 export class UDP {
     _connection: Deno.DatagramConn;
 
@@ -31,7 +39,8 @@ export class UDP {
         this._shutdown = new AsyncPromiseCancelable();
     }
 
-    send(buffer: Uint8Array, server: Server, timeout: number)
+    // deno-lint-ignore no-inferrable-types
+    send(buffer: Uint8Array, server: Server, timeout: number = 1000)
         : PromiseCancelable<Shutdown | TimeoutExpired | TimeoutCanceled | number> {
         if (this._shutdown.isResolved) {
             return this._shutdown;
@@ -41,7 +50,7 @@ export class UDP {
         return raceAgainstTime([promise, this._shutdown], timeout);
     }
 
-    receive(timeout: number)
+    receive(timeout: number = 10 * 1000)
         : PromiseCancelable<Shutdown | TimeoutExpired | TimeoutCanceled | [Uint8Array, Server]> {
         if (this._shutdown.isResolved) {
             return this._shutdown;
@@ -54,7 +63,9 @@ export class UDP {
         return raceAgainstTime([promise, this._shutdown], timeout);
     }
 
-    shutdown() {
+    async shutdown() {
         this._shutdown.resolve();
+        this._connection.close();
+        await this._shutdown;
     }
 }
