@@ -1,4 +1,12 @@
-import { AsyncList, AsyncPromise, AsyncIterableWithTimeout, delay } from "./promise.ts";
+import { AsyncList, AsyncPromise, AsyncIterableWithTimeout, delay, raceAgainstTime } from "./promise.ts";
+
+Deno.test("raceAgainstTime", async function () {
+    const p = new AsyncPromise<number>();
+    const p2 = raceAgainstTime([p], 500);
+    p2.cancel();
+    const r = await p2;
+    console.log(r);
+});
 
 Deno.test("promise", async function () {
     const p = new AsyncPromise<number>();

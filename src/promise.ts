@@ -4,7 +4,7 @@
 import { getIterator } from "./utility.ts";
 
 /** If T is Promise<U> then UnPromise<T> is U. Otherwise UnPromise<T> is T. */
-type UnPromise<T> = T extends PromiseLike<infer U> ? U : T;
+export type UnPromise<T> = T extends PromiseLike<infer U> ? U : T;
 
 /**
  * A promise that can be canceled.
@@ -205,15 +205,22 @@ export function throttle<T extends (...args: any[]) => any>(
  */
 export function raceAgainstTime<T>(values: readonly T[], ms: number)
     : PromiseCancelable<TimeoutExpired | TimeoutCanceled | UnPromise<T>> {
+    
+    // Create the timeout
     const timeout = delay(ms);
-    try {
-        const original = Promise.race([...values, timeout]);
-        const promise = new PromiseCancelableWrapper(original);
-        promise.cancel = timeout.cancel.bind(timeout);
-        return promise;
-    } finally {
-        timeout.cancel();
-    }
+    
+    // Start the race
+    const original = Promise.race([...values, timeout]);
+    
+    // Cancel the timeout as soon as the race ends however the race ends
+    original.finally(() => timeout.cancel());
+    
+    // Create a wrapper so the caller can cancel the race early
+    const promise = new PromiseCancelableWrapper(original);
+    promise.cancel = timeout.cancel.bind(timeout);
+
+    // Return the cancelable promise
+    return promise;
 }
 
 /**
