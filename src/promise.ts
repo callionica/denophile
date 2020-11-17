@@ -71,12 +71,15 @@ export class PromiseCancelableWrapper<T> extends PromiseWrapper<T> implements Pr
  * calling `promise.resolve()` or `promise.reject()`
  */
 export class AsyncPromise<T> extends PromiseWrapper<T> {
+    /** A synchronous way of checking whether the promise is resolved */
+    isResolved: boolean;
+
     /** Resolves the promise */
-    resolve!: (value?: T | PromiseLike<T>) => void;
+    resolve: (value?: T | PromiseLike<T>) => void;
 
     /** Rejects the promise */
     // deno-lint-ignore no-explicit-any
-    reject!: (reason?: any) => void;
+    reject: (reason?: any) => void;
 
     constructor() {
         let res!: (value?: T | PromiseLike<T>) => void;
@@ -89,19 +92,26 @@ export class AsyncPromise<T> extends PromiseWrapper<T> {
 
         super(promise);
 
-        this.resolve = res;
+        this.isResolved = false;
+        this.resolve = (value?: T | PromiseLike<T>) => { this.isResolved = true; res(value); };
         this.reject = rej;
     }
 }
 
 /** A promise that you can resolve, reject, or cancel */
-class AsyncPromiseCancelable<T> extends AsyncPromise<T> {
+export class AsyncPromiseCancelable<T> extends AsyncPromise<T> {
     /**
      * Cancels the action that would normally resolve the promise.
      * Cancellation may resolve or reject the promise or do neither.
      * Read the docs for the specific use!
      * */
-    cancel!: () => void;
+    cancel: () => void = () => { };
+
+    static resolve<T>(value: T): AsyncPromiseCancelable<T> {
+        const p = new AsyncPromiseCancelable<T>();
+        p.resolve(value);
+        return p;
+    }
 }
 
 /** A specific class to return from async functions for when we use Promise.race etc */
@@ -210,16 +220,16 @@ export function throttle<T extends (...args: any[]) => any>(
  */
 export function raceAgainstTime<T>(values: readonly T[], ms: number)
     : PromiseCancelable<TimeoutExpired | TimeoutCanceled | UnPromise<T>> {
-    
+
     // Create the timeout
     const timeout = delay(ms);
-    
+
     // Start the race
     const original = Promise.race([...values, timeout]);
-    
+
     // Cancel the timeout as soon as the race ends however the race ends
     original.finally(() => { timeout.cancel(); });
-    
+
     // Create a wrapper so the caller can cancel the race early
     const promise = new PromiseCancelableWrapper(original);
     promise.cancel = timeout.cancel.bind(timeout);
