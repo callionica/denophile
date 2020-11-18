@@ -71,13 +71,13 @@ export class UDP {
     }
 
     /**
-     * Sends data through the network to the host/port specified.
+     * Sends data through the network to the specified host/port.
      * 
      * @param buffer The data to send.
      * @param server The device to send the data to.
      * @param timeout The maximum number of milliseconds to wait before returning.
      * 
-     * timeout defaults to `Infinity` meaning the promise won't be resolved until the send has
+     * `timeout` defaults to `Infinity` meaning the promise won't be resolved until the send has
      * completed, the UDP object is told to shutdown, or the operation is canceled manually.
      */
     send(buffer: Uint8Array, server: Server, timeout: number = Infinity)
@@ -96,7 +96,7 @@ export class UDP {
      * 
      * @param timeout The maximum number of milliseconds to wait before returning.
      * 
-     * timeout defaults to `Infinity` meaning the promise won't be resolved until a message is
+     * `timeout` defaults to `Infinity` meaning the promise won't be resolved until a message is
      * received, the UDP object is told to shutdown, or the operation is canceled manually.
      */
     receive(timeout: number = Infinity)

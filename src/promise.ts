@@ -114,9 +114,16 @@ export class AsyncPromiseCancelable<T> extends AsyncPromise<T> {
     }
 }
 
-/** A specific class to return from async functions for when we use Promise.race etc */
+/**
+ * A specific class to return from async functions for when we use Promise.race etc.
+ * The superclass for TimeoutExpired and TimeoutCanceled.
+ */
 export class Timeout { }
+
+/** TimeoutExpired is used when a timeout reaches the end of its allotted time period. */
 export class TimeoutExpired extends Timeout { }
+
+/** TimeoutCanceled is used when a timed operation is canceled before the end of its duration. */
 export class TimeoutCanceled extends Timeout { }
 
 /**
