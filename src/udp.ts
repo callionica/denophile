@@ -36,8 +36,7 @@ export class Shutdown { }
  * 
  * To send data, call `send` as many times as necessary.
  * 
- * To receive data, override `onReceive` to handle incoming messages
- * and call `listen` once to start a loop to receive messages and pass them to `onReceive`.
+ * To receive data, call `listen` once to start a loop to receive messages and transfer them to `onReceive`, the message handler that you pass in to the `listen` function.
  * 
  * Call `shutdown` to safely close the UDP socket.
  * 
@@ -117,7 +116,7 @@ export class UDP {
      * This is where messages are received from the network and passed to `onReceive`
      * if `listen` has been called. Handles shutdown and timeouts.
      */
-    async _receiveLoop(): Promise<Shutdown> {
+    async _receiveLoop(onReceive: (buffer: Uint8Array, server: Server) => Promise<void>): Promise<Shutdown> {
         while (!this._shutdown.isResolved) {
             const result = await this.receive();
 
@@ -129,28 +128,23 @@ export class UDP {
                 continue;
             }
 
-            await this.onReceive(result[0], result[1]);
+            await onReceive(result[0], result[1]);
         }
         return this._shutdown;
     }
 
     /**
-     * If `listen` has been called, onReceive will receive data from the network.
-     * Override this method to provide your own handling.
-     */
-    async onReceive(buffer: Uint8Array, server: Server): Promise<void> {
-    }
-
-    /**
-     * Starts a loop to receive messages from the network and pass them to onReceive.
+     * Starts a loop to receive messages from the network and pass them to `onReceive`.
      * Only needs to be called once; subsequent calls are no-ops.
+     * 
+     * @param onReceive Receives data from the network
      */
-    listen() {
+    listen(onReceive: (buffer: Uint8Array, server: Server) => Promise<void>) {
         if (this._loop) {
             // If the loop has already been started, just return.
             return;
         }
-        this._loop = this._receiveLoop();
+        this._loop = this._receiveLoop(onReceive);
     }
 
     /** Shuts down the UDP socket safely */
