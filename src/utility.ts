@@ -575,3 +575,10 @@ function removeDiacritics(text: string) {
         return diacriticsMap[letter] || letter;
     });
 }
+
+function remove<T>(list: T[], value: T) {
+    const index = list.findIndex(v => value === v);
+    if (index >= 0) {
+        list.splice(index, 1);
+    }
+}
