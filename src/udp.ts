@@ -1,9 +1,12 @@
 // deno-lint-ignore-file
 import {
-    AsyncPromise, AsyncPromiseCancelable, PromiseCancelable,
+    AsyncPromise,
+    AsyncPromiseCancelable,
+    PromiseCancelable,
     raceAgainstTime,
     Timeout,
-    TimeoutCanceled, TimeoutExpired
+    TimeoutCanceled, TimeoutExpired,
+    Shutdown
 } from "./promise.ts"
 
 /** Represents the address of a device on the network */
@@ -21,15 +24,6 @@ export class Server {
 }
 
 /**
- * Represents a shutdown signal.
- * If you see Shutdown as one of the return types in a
- * Promise-returning function, you'll know that function
- * recognizes the shutdown signal and stops processing safely
- * at the appropriate time.
- */
-export class Shutdown { }
-
-/**
  * A class for receiving data at a UDP socket and sending data to UDP sockets on the network.
  * 
  * Pass a port number to the constructor to be used to receive incoming messages.
@@ -40,7 +34,7 @@ export class Shutdown { }
  * 
  * Call `shutdown` to safely close the UDP socket.
  * 
- * If you want lower level handling of incoming messages, you can skip the call to
+ * If you want lower-level handling of incoming messages, you can skip the call to
  * `listen` and call `receive` yourself as many times as necessary.
  */
 export class UDP {
@@ -128,7 +122,12 @@ export class UDP {
                 continue;
             }
 
-            await onReceive(result[0], result[1]);
+            try {
+                await onReceive(result[0], result[1]);
+            } catch (e) {
+                // Ignore exceptions from onReceive
+            }
+
         }
         return this._shutdown;
     }
