@@ -127,6 +127,15 @@ export class TimeoutExpired extends Timeout { }
 export class TimeoutCanceled extends Timeout { }
 
 /**
+ * Represents a shutdown signal.
+ * If you see Shutdown as one of the return types in a
+ * Promise-returning function, you'll know that function
+ * recognizes the shutdown signal and stops processing safely
+ * at the appropriate time.
+ */
+export class Shutdown { }
+
+/**
  * Wait for a specified number of milliseconds.
  * The promise returned is cancellable.
  * The promise can be resolved by the time expiring,
@@ -387,12 +396,12 @@ export class AsyncIterableWithTimeout<T> implements AsyncIterable<T> {
     }
 }
 
-const ignored: Promise<any>[] = [];
+// const ignored: Promise<any>[] = [];
 
-export function ignore(promise: Promise<any>): void {
-    ignored.push(promise);
-}
+// export function ignore(promise: Promise<any>): void {
+//     ignored.push(promise);
+// }
 
-export function awaitExit() {
-    return Promise.allSettled(ignored);
-}
+// export function awaitExit() {
+//     return Promise.allSettled(ignored);
+// }
