@@ -32,7 +32,7 @@ async function getOrConvertWebVTTs(primary: MediaPrimary, destinationFolder: Fil
         const dest = toFileURL(destinationFolder);
         const notVTT = subtitles.filter(s => !isWebVTT(s));
         webVTTs = await Promise.all(notVTT.map(async (s) => {
-            const path = new URL(`${s.name}.${s.extension}.vtt`, dest);
+            const path = new URL(encodeURIComponent(`${s.name}.${s.extension}.vtt`), dest);
             if (!(await exists(path))) {
                 console.log("sub", path.toString());
                 const convert = (s.extension === "ttml") ? ttml2vtt : srt2vtt;
