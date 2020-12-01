@@ -631,11 +631,11 @@ export async function fetchToFile(
     const location = toFileURL(folderPath);
 
     // Write to a temporary file
-    const tempPath = new URL(`${name}.${ext}.download`, location);
+    const tempPath = new URL(encodeURIComponent(`${name}.${ext}.download`), location);
     await writeFile(tempPath, data);
 
     // Once all data written, rename the file
-    const filePath = new URL(`${name}.${ext}`, location);
+    const filePath = new URL(encodeURIComponent(`${name}.${ext}`), location);
     await Deno.rename(toFilePath(tempPath), toFilePath(filePath));
 
     return filePath;
