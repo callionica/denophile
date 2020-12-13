@@ -24,10 +24,14 @@ function fileDisplayName(mediaGroup: MediaGroup, file: MediaPrimary) {
 }
 
 export function divideTitle(title: string): { title: string, subtitle?: string } {
-	const divider = " - ";
-	const index = title.indexOf(divider);
+	let divider = " - ";
+	let index = title.indexOf(divider);
 	if (index < 0) {
-		return { title };
+		divider = ": ";
+		index = title.indexOf(divider);
+		if (index < 0) {
+			return { title };
+		}
 	}
 	return { title: title.substring(0, index), subtitle: title.substring(index + divider.length)}
 }
