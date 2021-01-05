@@ -218,6 +218,7 @@ const standardDataExtractors = (function () {
     const subgroup = alt(grp(alt(season, chapter), ws, number("numberFromSubgroupName")), phrase);
     const name = alt(
         grp(
+            opt(phrase, ws),
             alt(episode, track, chapter), ws, number("numberFromName"),
             opt(period, ws, phrase)
         ),
