@@ -82,7 +82,7 @@ export class AsyncPromise<T> extends PromiseWrapper<T> {
     reject: (reason?: any) => void;
 
     constructor() {
-        let res!: (value?: T | PromiseLike<T>) => void;
+        let res!: (value: T | PromiseLike<T>) => void;
         let rej!: (reason?: any) => void;
 
         const promise: Promise<T> = new Promise((resolve, reject) => {
