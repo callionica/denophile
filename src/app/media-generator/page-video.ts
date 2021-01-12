@@ -95,7 +95,7 @@ ${htmlVideo(media, image, subtitles)}
 <h1 class="episode_name">${splitName.title}</h1>
 ${h2}
 <h2><span class="show">${group}</span> <span class="locator">${fileSE(file)}</span></h2>
-			<p class="elapsed"><span class="currentTime"></span><span class="duration">--:--</span></p>
+			<p class="elapsed"><span class="duration"></span><span class="currentTime"></span></p>
 		</div>
 		<div class="unsized-content">
 ${htmlSynopsis(description)}
